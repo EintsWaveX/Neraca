@@ -1,2 +1,0 @@
-import{S as e,x as t}from"./rates-DC23w5GX.js";import{t as n}from"./addDays-CfYKTamq.js";function r(n,r,i){let a=t(n,i?.in);if(isNaN(r))return e(i?.in||n,NaN);if(!r)return a;let o=a.getDate(),s=e(i?.in||n,a.getTime());return s.setMonth(a.getMonth()+r+1,0),o>=s.getDate()?s:(a.setFullYear(s.getFullYear(),s.getMonth(),o),a)}function i(e,t,r){return n(e,t*7,r)}export{r as n,i as t};
-//# sourceMappingURL=addWeeks-CjJlnyba.js.map
