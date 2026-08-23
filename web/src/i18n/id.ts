@@ -268,6 +268,10 @@ export const id: typeof en = {
 
   settings: {
     title: 'Pengaturan',
+    appearance: {
+      label: 'Tampilan',
+      themeHint: 'Pengaturan tema terang, gelap dan mengikuti sistem ada di bagian atas halaman, di sebelah menu profil.',
+    },
     language: {
       label: 'Bahasa',
       en: 'Inggris',

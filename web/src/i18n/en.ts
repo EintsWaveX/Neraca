@@ -267,6 +267,10 @@ export const en = {
 
   settings: {
     title: 'Settings',
+    appearance: {
+      label: 'Appearance',
+      themeHint: 'Light, dark and system theme switching lives in the header, next to the profile menu.',
+    },
     language: {
       label: 'Language',
       en: 'English',

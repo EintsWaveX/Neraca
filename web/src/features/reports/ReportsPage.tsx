@@ -11,7 +11,7 @@
  * handing the results to the chart components in charts.tsx.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths } from 'date-fns'
 import { useI18n } from '@/i18n'
 import { useProfile } from '@/app/ProfileProvider'
@@ -78,13 +78,11 @@ export default function ReportsPage() {
     [repo, profile.id],
   )
 
-  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
-  useEffect(() => {
-    if (selectedBudgetId !== null) return
-    const first = budgets?.[0]
-    if (first) setSelectedBudgetId(first.id)
-  }, [budgets, selectedBudgetId])
-
+  // Only the explicit override is stored in state; the effective selection
+  // falls back to the first loaded budget on its own, so there is no need to
+  // copy that default into state once the list arrives.
+  const [budgetIdOverride, setBudgetIdOverride] = useState<string | null>(null)
+  const selectedBudgetId = budgetIdOverride ?? budgets?.[0]?.id ?? null
   const selectedBudget: Budget | null = budgets?.find((b) => b.id === selectedBudgetId) ?? null
   const budgetRange = selectedBudget ? budgetPeriodRange(selectedBudget) : null
 
@@ -295,7 +293,7 @@ export default function ReportsPage() {
                 <Select
                   label={t.budget.title}
                   value={selectedBudgetId ?? ''}
-                  onChange={(event) => setSelectedBudgetId(event.target.value)}
+                  onChange={(event) => setBudgetIdOverride(event.target.value)}
                   className="text-xs"
                 >
                   {budgets.map((b) => (
