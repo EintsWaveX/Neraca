@@ -310,6 +310,10 @@ export const id: typeof en = {
   },
 
   demo: {
+    restoreTitle: 'Data contoh',
+    restoreBody: 'Profil contoh menampilkan aplikasi dengan riwayat empat belas bulan di dalamnya. Memulihkannya akan menambahkannya di samping profil Anda sendiri dan tidak mengubah apa pun yang sudah Anda masukkan.',
+    restoreButton: 'Pulihkan profil contoh',
+    goToDemo: 'Buka profil contoh',
     bannerText: 'Anda sedang melihat data contoh agar dapat melihat cara kerja aplikasi ini.',
     exploreCta: 'Jelajahi demo',
     resetButton: 'Atur ulang data demo',

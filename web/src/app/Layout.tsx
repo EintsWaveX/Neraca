@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useI18n } from '@/i18n'
-import { useProfile } from './ProfileProvider'
+import { useProfile, useProfiles } from './ProfileProvider'
 import { ThemeToggle } from '@/ui'
 
 interface NavItem {
@@ -36,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
 export function Layout() {
   const { t, locale, setLocale } = useI18n()
   const profile = useProfile()
+  const { profiles, select, close } = useProfiles()
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg md:flex-row">
@@ -65,7 +66,14 @@ export function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
-          <span className="truncate text-sm font-medium text-text">{profile.displayName}</span>
+          <ProfileSwitch
+            profiles={profiles}
+            currentId={profile.id}
+            onSelect={select}
+            onLock={close}
+            switchLabel={t.profile.switchProfile}
+            lockLabel={t.common.close}
+          />
           <div className="flex items-center gap-2">
             <LocaleSwitch locale={locale} onChange={setLocale} label={t.settings.language.label} />
             <ThemeToggle />
@@ -100,6 +108,67 @@ export function Layout() {
           </NavLink>
         ))}
       </nav>
+    </div>
+  )
+}
+
+/**
+ * Switching between profiles, and getting back to the picker.
+ *
+ * Without this the app was a one way door: creating a second profile switched
+ * to it with no route back, so a visitor who tapped "start my own profile"
+ * lost sight of the demo data entirely even though it was still in the
+ * database. A native select is used rather than a custom menu because it is
+ * keyboard operable and behaves properly on Android without any work.
+ */
+function ProfileSwitch({
+  profiles,
+  currentId,
+  onSelect,
+  onLock,
+  switchLabel,
+  lockLabel,
+}: {
+  profiles: Array<{ id: string; displayName: string }>
+  currentId: string
+  onSelect: (id: string) => void
+  onLock: () => void
+  switchLabel: string
+  lockLabel: string
+}) {
+  const current = profiles.find((row) => row.id === currentId)
+
+  // With a single profile there is nothing to switch to, so showing a control
+  // implying otherwise would be noise.
+  if (profiles.length < 2) {
+    return <span className="truncate text-sm font-medium text-text">{current?.displayName ?? ''}</span>
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-1.5">
+      <label className="sr-only" htmlFor="profile-switch">
+        {switchLabel}
+      </label>
+      <select
+        id="profile-switch"
+        value={currentId}
+        onChange={(event) => onSelect(event.currentTarget.value)}
+        className="min-w-0 max-w-44 truncate rounded-control border border-line bg-surface px-2 py-1 text-sm font-medium text-text transition-colors hover:border-line-strong"
+      >
+        {profiles.map((row) => (
+          <option key={row.id} value={row.id}>
+            {row.displayName}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={onLock}
+        title={lockLabel}
+        className="rounded-control px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-sunken hover:text-text"
+      >
+        {lockLabel}
+      </button>
     </div>
   )
 }

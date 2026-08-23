@@ -309,6 +309,10 @@ export const en = {
   },
 
   demo: {
+    restoreTitle: 'Demo data',
+    restoreBody: 'The sample profile shows the app with fourteen months of history already in it. Restoring it adds it alongside your own profiles and changes nothing you have entered.',
+    restoreButton: 'Restore the demo profile',
+    goToDemo: 'Open the demo profile',
     bannerText: 'You are viewing sample data so you can see the app in action.',
     exploreCta: 'Explore the demo',
     resetButton: 'Reset demo data',

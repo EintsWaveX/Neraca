@@ -26,6 +26,7 @@ import {
 import { useI18n, type T } from '@/i18n'
 import { useProfile, useProfiles } from '@/app/ProfileProvider'
 import { useAsync, useRepository } from '@/app/repo'
+import { buildDemoBackup } from '@/data/seed'
 import {
   Button, Card, CardBody, CardHeader, CardTitle, Input, Modal, Select, Textarea,
 } from '@/ui'
@@ -635,12 +636,59 @@ function DangerZoneSection() {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Bring the demo profile back.
+ *
+ * The seed only runs when the database holds no profiles at all, which is the
+ * right rule for a first visit but leaves no way back once a second profile
+ * exists. Someone who taps "start my own profile" and then deletes the demo
+ * has no route to the sample data again, and the demo is the thing that makes
+ * this app worth opening cold. This restores it as an additional profile and
+ * never touches what is already there.
+ */
+function RestoreDemoSection() {
+  const { t } = useI18n()
+  const repo = useRepository()
+  const { profiles, select, refresh } = useProfiles()
+  const [busy, setBusy] = useState(false)
+
+  const existing = profiles.find((row) => row.isDemo)
+
+  async function restore() {
+    setBusy(true)
+    try {
+      const id = await repo.importProfile(buildDemoBackup())
+      await refresh()
+      select(id)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t.demo.restoreTitle}</CardTitle>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-3">
+        <p className="text-sm text-muted">{t.demo.restoreBody}</p>
+        <div>
+          <Button variant="secondary" onClick={() => void (existing ? select(existing.id) : restore())} loading={busy}>
+            {existing ? t.demo.goToDemo : t.demo.restoreButton}
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  )
+}
+
 export default function DataPanel() {
   return (
     <div className="flex flex-col gap-4">
       <ProfileBackupSection />
       <CsvExportSection />
       <CsvImportSection />
+      <RestoreDemoSection />
       <DangerZoneSection />
     </div>
   )
