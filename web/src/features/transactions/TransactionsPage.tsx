@@ -23,7 +23,7 @@ import { useProfile } from '@/app/ProfileProvider'
 import { useI18n } from '@/i18n'
 import {
   Button, Card, CardBody, CardHeader, CardTitle, EmptyState, Modal, Skeleton,
-  Table, TBody, TD, TH, THead, TR, type SortDirection,
+  staggerStyle, Table, TBody, TD, TH, THead, TR, type SortDirection,
 } from '@/ui'
 import {
   FilterPanel, buildTransactionQuery, createEmptyFilters, filtersAreDefault,
@@ -140,7 +140,7 @@ export default function TransactionsPage() {
 
       <FilterPanel value={filters} onChange={setFilters} wallets={walletList} baseCurrency={profile.baseCurrency} />
 
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader className="flex-wrap">
           <CardTitle>{t.transaction.title}</CardTitle>
           {runningTotal && (
@@ -179,13 +179,13 @@ export default function TransactionsPage() {
                   </TR>
                 </THead>
                 <TBody>
-                  {rows.map((tx) => {
+                  {rows.map((tx, index) => {
                     const category = categoryById(tx.categoryId)
                     const type = transactionTypeById(tx.typeId)
                     const sourceWallet = walletById.get(tx.walletId)
                     const destWallet = tx.toWalletId ? walletById.get(tx.toWalletId) : undefined
                     return (
-                      <TR key={tx.id}>
+                      <TR key={tx.id} className="animate-rise-in" style={staggerStyle(index)}>
                         <TD>{formatDate(tx.date)}</TD>
                         <TD>
                           <div className="flex flex-col">

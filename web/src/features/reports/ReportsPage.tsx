@@ -16,7 +16,7 @@ import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths } f
 import { useI18n } from '@/i18n'
 import { useProfile } from '@/app/ProfileProvider'
 import { useAsync, useRepository } from '@/app/repo'
-import { Card, CardBody, CardHeader, CardTitle, EmptyState, Input, Select, Skeleton } from '@/ui'
+import { Card, CardBody, CardHeader, CardTitle, EmptyState, Input, Select, Skeleton, staggerStyle } from '@/ui'
 import {
   budgetBurndown, categoryBreakdown, incomeVsExpense, spendingOverTime, type Granularity,
 } from '@/domain/reports'
@@ -220,7 +220,7 @@ export default function ReportsPage() {
           </div>
         ) : (
           <>
-            <Card>
+            <Card className="animate-rise-in" style={staggerStyle(0)}>
               <CardHeader>
                 <CardTitle>{t.report.spendingOverTime}</CardTitle>
               </CardHeader>
@@ -239,7 +239,7 @@ export default function ReportsPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="animate-rise-in" style={staggerStyle(1)}>
               <CardHeader>
                 <CardTitle>{t.report.categoryBreakdown}</CardTitle>
               </CardHeader>
@@ -257,7 +257,7 @@ export default function ReportsPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="animate-rise-in" style={staggerStyle(2)}>
               <CardHeader>
                 <CardTitle>{t.report.incomeVsExpense}</CardTitle>
               </CardHeader>
@@ -285,7 +285,7 @@ export default function ReportsPage() {
           hasAnyData would make a budget with real spending disappear just
           because the unrelated top level range happens to be empty.
         */}
-        <Card>
+        <Card className="animate-rise-in" style={staggerStyle(3)}>
           <CardHeader className="flex-wrap gap-y-3">
             <CardTitle>{t.report.budgetBurnDown}</CardTitle>
             {budgets && budgets.length > 0 && (

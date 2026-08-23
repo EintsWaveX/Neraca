@@ -13,7 +13,7 @@ import { activeAlerts, budgetPeriodRange, evaluateBudget, type BudgetStatus } fr
 import { abs, formatMoney } from '@/domain/money'
 import { categoryById } from '@/domain/categories'
 import {
-  Badge, Button, Card, CardBody, EmptyState, Modal, Skeleton, Tabs,
+  Badge, Button, Card, CardBody, EmptyState, Modal, ProgressBar, Skeleton, staggerStyle, Tabs,
 } from '@/ui'
 import { BudgetForm, defaultPeriodKeyFor, PeriodKeyField } from './BudgetForm'
 
@@ -126,14 +126,15 @@ export default function BudgetsPage() {
 
       {alerts.length > 0 && (
         <div className="flex flex-col gap-2">
-          {alerts.map((status) => (
+          {alerts.map((status, index) => (
             <div
               key={status.budget.id}
-              className={`flex items-center justify-between gap-3 rounded-control border px-3 py-2 text-sm ${
+              className={`animate-rise-in flex items-center justify-between gap-3 rounded-control border px-3 py-2 text-sm ${
                 status.state === 'over'
                   ? 'border-negative/30 bg-negative-soft text-negative'
                   : 'border-warning/30 bg-warning-soft text-warning'
               }`}
+              style={staggerStyle(index)}
             >
               <span className="font-medium">{categoryLabel(status.budget.categoryId)}</span>
               <span>
@@ -186,11 +187,11 @@ export default function BudgetsPage() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {statuses.map((status) => {
+          {statuses.map((status, index) => {
             const percent = clampedPercent(status.fraction)
             const label = categoryLabel(status.budget.categoryId)
             return (
-              <Card key={status.budget.id}>
+              <Card key={status.budget.id} interactive className="animate-rise-in" style={staggerStyle(index)}>
                 <CardBody className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-0.5">
@@ -218,19 +219,7 @@ export default function BudgetsPage() {
                     </div>
                   </div>
 
-                  <div
-                    role="progressbar"
-                    aria-label={label}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={percent}
-                    className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken"
-                  >
-                    <div
-                      className={`h-full rounded-full ${STATE_BAR_CLASS[status.state]}`}
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
+                  <ProgressBar value={percent} label={label} barClassName={STATE_BAR_CLASS[status.state]} />
 
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="text-muted tnum">

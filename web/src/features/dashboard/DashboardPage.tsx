@@ -15,7 +15,7 @@ import { blankProfile } from '@/app/ProfileGate'
 import { useI18n } from '@/i18n'
 import {
   Badge, type BadgeTone, Button, Card, CardBody, CardHeader, CardTitle, EmptyState,
-  Skeleton, Table, TBody, TD, TH, THead, TR,
+  ProgressBar, Skeleton, staggerStyle, Table, TBody, TD, TH, THead, TR, useCountUp,
 } from '@/ui'
 import { walletBalance, netWorth } from '@/domain/balances'
 import { signedBase } from '@/domain/rates'
@@ -62,37 +62,17 @@ export default function DashboardPage() {
   const [bannerDismissed, setBannerDismissed] = useState(() => readDismissed(profile.id))
   const [startingOwn, setStartingOwn] = useState(false)
 
-  async function handleStartOwnProfile() {
-    setStartingOwn(true)
-    try {
-      // A demo profile's own name and currency carry over onto the fresh one,
-      // since they describe the visitor's own locale, not the sample data.
-      const created = blankProfile(profile.displayName, profile.baseCurrency, profile.locale)
-      await repo.putProfile(created)
-      await refresh()
-      select(created.id)
-    } finally {
-      setStartingOwn(false)
-    }
-  }
-
-  function handleDismissBanner() {
-    setBannerDismissed(true)
-    storeDismissed(profile.id)
-  }
-
-  if (loading) return <DashboardSkeleton />
-
-  if (error || !data) {
-    return (
-      <div className="p-4 sm:p-6">
-        <EmptyState title={t.common.unknownError} action={<Button onClick={reload}>{t.common.retry}</Button>} />
-      </div>
-    )
-  }
-
-  const { wallets, transactions, budgets, rates } = data
+  // Computed here, above the loading/error early returns below, because
+  // useCountUp is a hook: it has to run on every render in the same order,
+  // including the ones where `data` is not back yet. Every domain call here
+  // already tolerates the empty arrays that fall out of `data` being
+  // undefined (sum([]) and netWorth([]) both settle on zero rather than
+  // throwing), so this is safe to run before the loading check.
   const base = profile.baseCurrency
+  const wallets = data?.wallets ?? []
+  const transactions = data?.transactions ?? []
+  const budgets = data?.budgets ?? []
+  const rates = data?.rates ?? []
   // Archived wallets keep their history for reports but drop out of the
   // headline totals, the same way an archived wallet drops out of new entry
   // pickers elsewhere in the app.
@@ -123,6 +103,45 @@ export default function DashboardPage() {
   // separate filter needed.
   const netTotal = sum(monthTxs.map((tx) => signedBase(tx, base)), base)
 
+  // The four headline figures a reader's eye lands on first, and the only
+  // numbers on this page that count up rather than rendering their final
+  // value straight away. While `data` is still loading these all animate
+  // toward 0; the moment real numbers land, the target changes and each
+  // counts up from there, whether that is from 0 or from a stale figure.
+  const animatedWorth = useCountUp(worth?.minor ?? 0)
+  const animatedIncome = useCountUp(incomeTotal.minor)
+  const animatedExpense = useCountUp(expenseTotal.minor)
+  const animatedNet = useCountUp(netTotal.minor)
+
+  async function handleStartOwnProfile() {
+    setStartingOwn(true)
+    try {
+      // A demo profile's own name and currency carry over onto the fresh one,
+      // since they describe the visitor's own locale, not the sample data.
+      const created = blankProfile(profile.displayName, profile.baseCurrency, profile.locale)
+      await repo.putProfile(created)
+      await refresh()
+      select(created.id)
+    } finally {
+      setStartingOwn(false)
+    }
+  }
+
+  function handleDismissBanner() {
+    setBannerDismissed(true)
+    storeDismissed(profile.id)
+  }
+
+  if (loading) return <DashboardSkeleton />
+
+  if (error || !data) {
+    return (
+      <div className="p-4 sm:p-6">
+        <EmptyState title={t.common.unknownError} action={<Button onClick={reload}>{t.common.retry}</Button>} />
+      </div>
+    )
+  }
+
   const alerts = activeAlerts(budgets, transactions, base)
   const recent = transactions.slice(0, 10)
   const hasNoTransactions = transactions.length === 0
@@ -134,18 +153,18 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
+        <Card className="animate-rise-in lg:col-span-1" style={staggerStyle(0)}>
           <CardHeader>
             <CardTitle>{t.wallet.totalBalance}</CardTitle>
           </CardHeader>
-          <CardBody>
-            <p className={`text-2xl font-semibold tnum ${worth && worth.minor < 0 ? 'text-negative' : 'text-text'}`}>
-              {worth ? formatMoney(worth) : '-'}
+          <CardBody className="flex h-full items-center">
+            <p className={`text-2xl font-semibold tnum sm:text-3xl ${worth && worth.minor < 0 ? 'text-negative' : 'text-text'}`}>
+              {worth ? formatMoney({ minor: Math.round(animatedWorth), currency: worth.currency }) : '-'}
             </p>
           </CardBody>
         </Card>
 
-        <Card className="sm:col-span-2 lg:col-span-2">
+        <Card className="animate-rise-in sm:col-span-2 lg:col-span-2" style={staggerStyle(1)}>
           <CardHeader>
             <CardTitle>{t.wallet.title}</CardTitle>
           </CardHeader>
@@ -154,8 +173,12 @@ export default function DashboardPage() {
               <p className="text-sm text-muted">{t.empty.wallets}</p>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {activeWallets.map((wallet) => (
-                  <div key={wallet.id} className="rounded-control border border-line p-3">
+                {activeWallets.map((wallet, index) => (
+                  <div
+                    key={wallet.id}
+                    className="card-interactive animate-rise-in rounded-control border border-line p-3"
+                    style={staggerStyle(index)}
+                  >
                     <p className="truncate text-sm font-medium text-text">{wallet.name}</p>
                     <p className="text-xs text-muted">{t.wallet.kinds[wallet.kind]}</p>
                     <p className="mt-1 text-lg font-semibold tnum text-text">
@@ -170,48 +193,55 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
+        <Card className="animate-rise-in" style={staggerStyle(2)}>
           <CardHeader>
             <CardTitle>{t.report.totalIncome}</CardTitle>
           </CardHeader>
           <CardBody>
-            <p className="text-xl font-semibold tnum text-positive">{formatMoney(incomeTotal)}</p>
+            <p className="text-xl font-semibold tnum text-positive">
+              {formatMoney({ minor: Math.round(animatedIncome), currency: incomeTotal.currency })}
+            </p>
           </CardBody>
         </Card>
-        <Card>
+        <Card className="animate-rise-in" style={staggerStyle(3)}>
           <CardHeader>
             <CardTitle>{t.report.totalExpense}</CardTitle>
           </CardHeader>
           <CardBody>
-            <p className="text-xl font-semibold tnum text-negative">{formatMoney(expenseTotal)}</p>
+            <p className="text-xl font-semibold tnum text-negative">
+              {formatMoney({ minor: Math.round(animatedExpense), currency: expenseTotal.currency })}
+            </p>
           </CardBody>
         </Card>
-        <Card>
+        <Card className="animate-rise-in" style={staggerStyle(4)}>
           <CardHeader>
             <CardTitle>{t.report.netBalance}</CardTitle>
           </CardHeader>
           <CardBody>
             <p className={`text-xl font-semibold tnum ${netTotal.minor < 0 ? 'text-negative' : 'text-positive'}`}>
-              {formatMoney(netTotal, { signDisplay: 'always' })}
+              {formatMoney(
+                { minor: Math.round(animatedNet), currency: netTotal.currency },
+                { signDisplay: 'always' },
+              )}
             </p>
           </CardBody>
         </Card>
       </div>
 
       {alerts.length > 0 && (
-        <Card>
+        <Card className="animate-rise-in" style={staggerStyle(5)}>
           <CardHeader>
             <CardTitle>{t.budget.title}</CardTitle>
           </CardHeader>
           <CardBody className="flex flex-col gap-4">
-            {alerts.map((status) => (
-              <BudgetAlertRow key={status.budget.id} status={status} />
+            {alerts.map((status, index) => (
+              <BudgetAlertRow key={status.budget.id} status={status} index={index} />
             ))}
           </CardBody>
         </Card>
       )}
 
-      <Card>
+      <Card className="animate-rise-in" style={staggerStyle(6)}>
         <CardHeader>
           <CardTitle>{t.transaction.title}</CardTitle>
           <Link to="/transactions" className="text-sm font-medium text-accent hover:underline">
@@ -239,8 +269,8 @@ export default function DashboardPage() {
                 </TR>
               </THead>
               <TBody>
-                {recent.map((tx) => (
-                  <RecentTransactionRow key={tx.id} tx={tx} baseCurrency={base} />
+                {recent.map((tx, index) => (
+                  <RecentTransactionRow key={tx.id} tx={tx} baseCurrency={base} index={index} />
                 ))}
               </TBody>
             </Table>
@@ -291,7 +321,7 @@ function DemoBanner({
   )
 }
 
-function BudgetAlertRow({ status }: { status: BudgetStatus }) {
+function BudgetAlertRow({ status, index }: { status: BudgetStatus; index: number }) {
   const { t, labelFor } = useI18n()
   const category = status.budget.categoryId ? categoryById(status.budget.categoryId) : undefined
   const label = category ? labelFor(category) : t.budget.fields.allCategories
@@ -301,9 +331,12 @@ function BudgetAlertRow({ status }: { status: BudgetStatus }) {
   const pct = Math.min(100, Math.round(status.fraction * 100))
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="animate-rise-in flex flex-col gap-1.5" style={staggerStyle(index)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-medium text-text">{label}</span>
+        <span className="flex flex-wrap items-baseline gap-x-2 text-sm font-medium text-text">
+          {label}
+          <span className="text-xs font-normal text-faint">{status.budget.periodKey}</span>
+        </span>
         <Badge tone={tone}>
           {over ? t('budget.overLimit', { amount: formatMoney(negate(status.remaining)) }) : t.budget.nearLimit}
         </Badge>
@@ -311,21 +344,20 @@ function BudgetAlertRow({ status }: { status: BudgetStatus }) {
       <p className="text-xs text-muted">
         {t('budget.spentOfLimit', { spent: formatMoney(status.spent), limit: formatMoney(status.limit) })}
       </p>
-      <div
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={label}
-        className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken"
-      >
-        <div className={`h-full ${barClass}`} style={{ width: `${pct}%` }} />
-      </div>
+      <ProgressBar value={pct} label={label} barClassName={barClass} />
     </div>
   )
 }
 
-function RecentTransactionRow({ tx, baseCurrency }: { tx: Transaction; baseCurrency: CurrencyCode }) {
+function RecentTransactionRow({
+  tx,
+  baseCurrency,
+  index,
+}: {
+  tx: Transaction
+  baseCurrency: CurrencyCode
+  index: number
+}) {
   const { t, formatDate, labelFor } = useI18n()
   const category = categoryById(tx.categoryId)
   const isTransfer = tx.direction === 'transfer'
@@ -338,7 +370,7 @@ function RecentTransactionRow({ tx, baseCurrency }: { tx: Transaction; baseCurre
   const displayAmount = isTransfer ? money(tx.amount, tx.currency) : signed
 
   return (
-    <TR>
+    <TR className="animate-rise-in" style={staggerStyle(index)}>
       <TD>{formatDate(tx.date)}</TD>
       <TD>{label}</TD>
       <TD className="max-w-[14rem] truncate">{tx.description || '-'}</TD>

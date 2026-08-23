@@ -15,7 +15,7 @@ import { dueOccurrences, materialise, occurrencesBetween } from '@/domain/recurr
 import { findRate } from '@/domain/rates'
 import { newId, nowIso } from '@/data/ids'
 import {
-  Badge, Button, Card, CardBody, EmptyState, Modal, Skeleton,
+  Badge, Button, Card, CardBody, EmptyState, Modal, Skeleton, staggerStyle,
 } from '@/ui'
 import { RecurringForm } from './RecurringForm'
 
@@ -235,12 +235,12 @@ export default function RecurringPage() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {rules.map((rule) => {
+          {rules.map((rule, index) => {
             const due = dueOccurrences(rule, today).length > 0
             const next = nextDueDate(rule)
             const preview = previewDates(rule)
             return (
-              <Card key={rule.id}>
+              <Card key={rule.id} interactive className="animate-rise-in" style={staggerStyle(index)}>
                 <CardBody className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-0.5">

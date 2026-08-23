@@ -169,6 +169,139 @@ body {
   border-radius: 4px;
 }
 
+/*
+  Motion vocabulary.
+
+  One easing curve, three durations and a handful of named keyframes, so
+  every animation in the app (this file, src/ui, the feature screens) is
+  drawn from the same small system rather than invented per component. The
+  reduced-motion block further down zeroes every animation-duration and
+  transition-duration, so nothing defined here needs its own escape hatch;
+  it only needs to actually use `animation` or `transition`, never a
+  JavaScript-driven loop that would bypass that rule (see useCountUp and
+  useMountedPercent in src/ui, which check the media query themselves).
+*/
+:root {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+
+  /* A soft, translucent version of the accent colour for glows and focus
+     rings, so those effects stay in step with the accent ramp automatically
+     rather than needing their own light/dark override blocks. */
+  --accent-glow: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 14px 1px var(--accent-glow);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/*
+  Entrance for list items and dashboard tiles. --stagger-index is set inline
+  per element (see staggerStyle in src/ui/motion.ts) as a CSS custom
+  property rather than a computed inline delay, so the actual timing curve
+  lives in exactly one place. The `min()` caps the cumulative delay at
+  300ms so a long list never leaves a row still animating in once a reader
+  has scrolled past it.
+*/
+.animate-rise-in {
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+  animation-delay: min(calc(var(--stagger-index, 0) * 24ms), 300ms);
+}
+
+.animate-scale-in {
+  animation: scale-in var(--dur) var(--ease-out) both;
+}
+
+/* A shimmering sweep for loading placeholders, in place of a flat pulse. */
+.animate-shimmer {
+  background: linear-gradient(100deg, var(--surface-sunken) 40%, var(--surface-raised) 50%, var(--surface-sunken) 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/*
+  Lift used only where a whole card acts as one interactive unit (a record
+  with its own edit/delete controls, for example), not on purely
+  presentational cards, so hover never implies an affordance that is not
+  there.
+*/
+.card-interactive {
+  transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+.card-interactive:hover,
+.card-interactive:focus-within {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-pop);
+}
+
+/*
+  A budget or progress bar's own fill. The track around it never changes
+  size, so animating this element's width cannot shift anything outside
+  it, the one exception the motion pass makes to "never animate width".
+*/
+.bar-fill {
+  transition: width var(--dur-slow) var(--ease-out), background-color var(--dur) var(--ease-out);
+}
+
+/* The one place a persistent glow is welcome: the single active nav item. */
+.nav-active-glow {
+  animation: glow-pulse 2.6s ease-in-out infinite;
+}
+
+/* A brief settle for routed page content, without touching layout: opacity only. */
+.animate-route {
+  animation: fade-in var(--dur) var(--ease-out) both;
+}
+
+/* Modal open: the dialog itself scales and fades in, its backdrop just fades. showModal()'s focus handling in Modal.tsx runs independently of this, so the animation never delays or replaces it. */
+dialog[open] {
+  animation: scale-in var(--dur) var(--ease-out) both;
+}
+dialog[open]::backdrop {
+  animation: fade-in var(--dur) var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

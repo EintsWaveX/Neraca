@@ -18,7 +18,7 @@ import { useProfile } from '@/app/ProfileProvider'
 import { useI18n } from '@/i18n'
 import {
   Badge, Button, Card, CardBody, CardHeader, CardTitle, EmptyState, Modal, Skeleton,
-  Table, TBody, TD, TH, THead, TR,
+  staggerStyle, Table, TBody, TD, TH, THead, TR,
 } from '@/ui'
 import { WalletForm } from './WalletForm'
 
@@ -121,7 +121,7 @@ export default function WalletsPage() {
         <Button onClick={() => setEditing('new')}>{t.wallet.add}</Button>
       </header>
 
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader className="flex-wrap">
           <CardTitle>{t.wallet.totalBalance}</CardTitle>
           {total ? (
@@ -160,10 +160,10 @@ export default function WalletsPage() {
                 </TR>
               </THead>
               <TBody>
-                {visibleWallets.map((wallet) => {
+                {visibleWallets.map((wallet, index) => {
                   const balance = walletBalance(wallet, txList)
                   return (
-                    <TR key={wallet.id}>
+                    <TR key={wallet.id} className="animate-rise-in" style={staggerStyle(index)}>
                       <TD>
                         <div className="flex items-center gap-2">
                           <span>{wallet.name}</span>

@@ -9,7 +9,7 @@
  */
 
 import type { ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useI18n } from '@/i18n'
 import { useProfile, useProfiles } from './ProfileProvider'
 import { ThemeToggle } from '@/ui'
@@ -37,6 +37,11 @@ export function Layout() {
   const { t, locale, setLocale } = useI18n()
   const profile = useProfile()
   const { profiles, select, close } = useProfiles()
+  // Keying the routed content on the path makes React remount (and so
+  // replay .animate-route on) that wrapper every navigation, which is the
+  // simplest way to get a per-route entrance without each of the seven
+  // feature pages animating itself.
+  const location = useLocation()
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg md:flex-row">
@@ -50,8 +55,10 @@ export function Layout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-control px-2.5 py-2 text-sm font-medium ${
-                  isActive ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-sunken hover:text-text'
+                `flex items-center gap-2.5 rounded-control px-2.5 py-2 text-sm font-medium transition-colors duration-[var(--dur)] ease-[var(--ease-out)] ${
+                  isActive
+                    ? 'bg-accent-soft text-accent nav-active-glow'
+                    : 'text-muted hover:bg-surface-sunken hover:text-text'
                 }`
               }
             >
@@ -82,7 +89,9 @@ export function Layout() {
 
         {/* Bottom tab bar leaves room below it (pb-16) so the last bit of page content is never hidden behind the fixed bar. */}
         <main className="min-w-0 flex-1 pb-16 md:pb-0">
-          <Outlet />
+          <div key={location.pathname} className="animate-route">
+            <Outlet />
+          </div>
         </main>
       </div>
 
@@ -96,8 +105,8 @@ export function Layout() {
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex min-w-14 flex-col items-center gap-0.5 rounded-control px-1.5 py-1.5 text-[0.65rem] font-medium ${
-                isActive ? 'text-accent' : 'text-muted'
+              `flex min-w-14 flex-col items-center gap-0.5 rounded-control px-1.5 py-1.5 text-[0.65rem] font-medium transition-colors duration-[var(--dur)] ease-[var(--ease-out)] ${
+                isActive ? 'text-accent nav-active-glow' : 'text-muted'
               }`
             }
           >
@@ -239,7 +248,12 @@ function WalletIcon() {
 function PieIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M10 2.5v7.5h7.5A7.5 7.5 0 1010 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      {/* A circle with two radii. The previous single path used SVG arc flags
+          in compact form ("0 1010 2.5"), which the renderer read as a
+          malformed arc and dropped, leaving only the two straight segments
+          showing as a corner glyph. */}
+      <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 10V2.75M10 10h7.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
 }

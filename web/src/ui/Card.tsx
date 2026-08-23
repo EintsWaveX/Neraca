@@ -1,12 +1,15 @@
 import type { HTMLAttributes } from 'react'
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  /** Lifts on hover/focus-within, for a card that acts as one interactive unit (a record with its own edit or delete controls, say). Left off by default so a purely presentational card never implies an affordance it does not have. */
+  interactive?: boolean
+}
 
 /** The card surface itself. Uses the shared --radius-card and --shadow-card tokens so every card in every app matches. */
-export function Card({ className, ...props }: CardProps) {
+export function Card({ interactive, className, ...props }: CardProps) {
   return (
     <div
-      className={`rounded-card border border-line bg-surface shadow-[var(--shadow-card)] ${className ?? ''}`}
+      className={`rounded-card border border-line bg-surface shadow-[var(--shadow-card)] ${interactive ? 'card-interactive' : ''} ${className ?? ''}`}
       {...props}
     />
   )

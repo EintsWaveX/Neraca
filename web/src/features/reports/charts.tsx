@@ -89,6 +89,44 @@ export function useChartColors(): ChartColors {
 }
 
 // ---------------------------------------------------------------------------
+// Chart motion
+// ---------------------------------------------------------------------------
+
+export interface ChartMotion {
+  /** recharts' own switch for its draw-in animation. */
+  isAnimationActive: boolean
+  animationDuration: number
+}
+
+/** Reads --dur-slow the same way readToken above reads colours, so the chart's draw-in timing stays in step with the rest of the motion system instead of a duration invented just for recharts. Falls back to 320ms (the token's own value) if the property somehow fails to resolve. */
+function readAnimationDuration(): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--dur-slow').trim()
+  const parsed = Number.parseFloat(raw)
+  return Number.isFinite(parsed) ? parsed : 320
+}
+
+/**
+ * Whether recharts should animate at all, and how long that animation
+ * should take. Turned off entirely under reduced motion rather than left to
+ * the global CSS rule in index.css, because recharts drives its draw-in
+ * with a JS-timed interpolation, not a CSS animation or transition that
+ * rule can reach.
+ */
+export function useChartMotion(): ChartMotion {
+  const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReduced(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return { isAnimationActive: !reduced, animationDuration: readAnimationDuration() }
+}
+
+// ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
@@ -156,6 +194,7 @@ export interface SpendingOverTimeChartProps {
 
 export function SpendingOverTimeChart({ points, currency, granularity, locale, t }: SpendingOverTimeChartProps) {
   const colors = useChartColors()
+  const motion = useChartMotion()
   const data = points.map((p) => ({ period: p.period, minor: p.amount.minor }))
   const total = points.reduce((sum, p) => sum + p.amount.minor, 0)
   const peak = points.reduce<SeriesPoint | null>((max, p) => (max === null || p.amount.minor > max.amount.minor ? p : max), null)
@@ -190,7 +229,15 @@ export function SpendingOverTimeChart({ points, currency, granularity, locale, t
               labelFormatter={(label: unknown) => tooltipDateLabel(label, (d) => periodLabel(d, granularity, locale))}
               contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)' }}
             />
-            <Area type="monotone" dataKey="minor" stroke={colors.accent} strokeWidth={2} fill="url(#spendingFill)" />
+            <Area
+              type="monotone"
+              dataKey="minor"
+              stroke={colors.accent}
+              strokeWidth={2}
+              fill="url(#spendingFill)"
+              isAnimationActive={motion.isAnimationActive}
+              animationDuration={motion.animationDuration}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -237,6 +284,7 @@ export interface CategoryBreakdownChartProps {
 
 export function CategoryBreakdownChart({ totals, currency, locale, t }: CategoryBreakdownChartProps) {
   const colors = useChartColors()
+  const motion = useChartMotion()
   // No dedicated "long tail" bucket string exists in the dictionary; the
   // "Other" category group already carries this exact meaning in both
   // locales, so it is reused here rather than inventing new copy.
@@ -271,7 +319,13 @@ export function CategoryBreakdownChart({ totals, currency, locale, t }: Category
               formatter={(value: unknown) => tooltipMoneyValue(value, currency, locale)}
               contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)' }}
             />
-            <Bar dataKey="minor" fill={colors.accent} radius={[0, 4, 4, 0]} />
+            <Bar
+              dataKey="minor"
+              fill={colors.accent}
+              radius={[0, 4, 4, 0]}
+              isAnimationActive={motion.isAnimationActive}
+              animationDuration={motion.animationDuration}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -317,6 +371,7 @@ export interface IncomeExpenseChartProps {
 
 export function IncomeExpenseChart({ points, currency, granularity, locale, t }: IncomeExpenseChartProps) {
   const colors = useChartColors()
+  const motion = useChartMotion()
   const data = points.map((p) => ({ period: p.period, income: p.income.minor, expense: p.expense.minor }))
   const totalIncome = points.reduce((sum, p) => sum + p.income.minor, 0)
   const totalExpense = points.reduce((sum, p) => sum + p.expense.minor, 0)
@@ -349,8 +404,22 @@ export function IncomeExpenseChart({ points, currency, granularity, locale, t }:
               formatter={(value: string) => (value === 'income' ? t.transaction.directions.income : t.transaction.directions.expense)}
               wrapperStyle={{ fontSize: 12, color: colors.muted }}
             />
-            <Bar dataKey="income" name="income" fill={colors.positive} radius={[3, 3, 0, 0]} />
-            <Bar dataKey="expense" name="expense" fill={colors.negative} radius={[3, 3, 0, 0]} />
+            <Bar
+              dataKey="income"
+              name="income"
+              fill={colors.positive}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={motion.isAnimationActive}
+              animationDuration={motion.animationDuration}
+            />
+            <Bar
+              dataKey="expense"
+              name="expense"
+              fill={colors.negative}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={motion.isAnimationActive}
+              animationDuration={motion.animationDuration}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -397,6 +466,7 @@ export interface BudgetBurndownChartProps {
 
 export function BudgetBurndownChart({ points, currency, locale, t }: BudgetBurndownChartProps) {
   const colors = useChartColors()
+  const motion = useChartMotion()
   const data = points.map((p) => ({ date: p.date, cumulative: p.cumulative.minor, ideal: p.ideal.minor }))
   const last = points[points.length - 1]
 
@@ -434,8 +504,27 @@ export function BudgetBurndownChart({ points, currency, locale, t }: BudgetBurnd
               formatter={(value: string) => (value === 'cumulative' ? t.report.budgetBurnDown : t.budget.onTrack)}
               wrapperStyle={{ fontSize: 12, color: colors.muted }}
             />
-            <Line type="monotone" dataKey="ideal" name="ideal" stroke={colors.faint} strokeWidth={2} strokeDasharray="4 4" dot={false} />
-            <Line type="monotone" dataKey="cumulative" name="cumulative" stroke={colors.accent} strokeWidth={2} dot={false} />
+            <Line
+              type="monotone"
+              dataKey="ideal"
+              name="ideal"
+              stroke={colors.faint}
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              dot={false}
+              isAnimationActive={motion.isAnimationActive}
+              animationDuration={motion.animationDuration}
+            />
+            <Line
+              type="monotone"
+              dataKey="cumulative"
+              name="cumulative"
+              stroke={colors.accent}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={motion.isAnimationActive}
+              animationDuration={motion.animationDuration}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -11,15 +11,17 @@ const shapeClasses: Record<NonNullable<SkeletonProps['shape']>, string> = {
   circle: 'rounded-full',
 }
 
-// Built on Tailwind's animate-pulse rather than a hand rolled gradient sweep,
-// because it needs no keyframes beyond what Tailwind already ships, and the
-// global rule in index.css that zeroes animation-duration under
-// prefers-reduced-motion already covers it without any extra work here.
+// Built on the shared .animate-shimmer keyframe (index.css) rather than
+// Tailwind's flat animate-pulse, so a loading placeholder reads as a sweep
+// of light rather than a blunt fade in and out. The global rule in
+// index.css that zeroes animation-duration under prefers-reduced-motion
+// already covers it without any extra work here: it settles on the
+// gradient's end position almost instantly instead of looping.
 export function Skeleton({ shape = 'text', className, ...props }: SkeletonProps) {
   return (
     <div
       aria-hidden="true"
-      className={`animate-pulse bg-surface-sunken ${shapeClasses[shape]} ${className ?? ''}`}
+      className={`animate-shimmer ${shapeClasses[shape]} ${className ?? ''}`}
       {...props}
     />
   )
