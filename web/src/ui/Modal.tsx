@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react'
+import { X } from 'lucide-react'
+import { cn } from '../lib/utils'
 
 export interface ModalProps {
   open: boolean
@@ -72,7 +74,10 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
       ref={dialogRef}
       aria-labelledby={titleId}
       onClick={handleBackdropClick}
-      className={`m-auto max-h-[85vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-0 text-text shadow-[var(--shadow-pop)] backdrop:bg-[oklch(0%_0_0/0.5)] ${className ?? ''}`}
+      className={cn(
+        "m-auto max-h-[85vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-0 text-text shadow-[var(--shadow-pop)] backdrop:bg-[oklch(0%_0_0/0.45)] backdrop:backdrop-blur-[2px]",
+        className
+      )}
     >
       <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
         <h2 id={titleId} className="text-base font-semibold text-text">
@@ -82,11 +87,9 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
           type="button"
           onClick={() => dialogRef.current?.close()}
           aria-label="Close dialog"
-          className="rounded-control p-1 text-muted hover:bg-surface-sunken hover:text-text"
+          className="rounded-control p-1 text-muted hover:bg-surface-sunken hover:text-text transition-colors"
         >
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <div className="px-5 py-4">{children}</div>

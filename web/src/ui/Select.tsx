@@ -1,4 +1,6 @@
 import { forwardRef, useId, type SelectHTMLAttributes } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '../lib/utils'
 
 export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> {
   label: string
@@ -38,21 +40,21 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className={`w-full appearance-none rounded-control border bg-surface px-3 py-2 pr-9 text-sm text-text transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)] focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_var(--accent-soft)] disabled:cursor-not-allowed disabled:opacity-60 ${
-            error ? 'border-negative' : 'border-line'
-          } ${className ?? ''}`}
+          className={cn(
+            "w-full appearance-none rounded-control border bg-surface px-3 py-2 pr-9 text-sm text-text transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)]",
+            "focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent focus-visible:outline-none",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+            error ? "border-negative focus-visible:border-negative focus-visible:ring-negative" : "border-line",
+            className
+          )}
           {...props}
         >
           {children}
         </select>
-        <svg
+        <ChevronDown
           aria-hidden="true"
-          viewBox="0 0 20 20"
-          fill="none"
           className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
-        >
-          <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        />
       </div>
       {hint && !error && (
         <p id={hintId} className="text-xs text-muted">

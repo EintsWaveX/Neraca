@@ -208,7 +208,6 @@ function CreateProfileModal({
           }}
           error={error ?? undefined}
           required
-          autoFocus
         />
         <Select
           label={t.profile.fields.baseCurrency}
@@ -275,7 +274,6 @@ function PinScreen({
               value={pin}
               onChange={(event) => setPin(event.target.value)}
               error={error ?? undefined}
-              autoFocus
               required
             />
             <Button type="submit" loading={checking} disabled={pin.length === 0}>

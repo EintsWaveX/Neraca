@@ -1,4 +1,5 @@
 import { forwardRef, useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { cn } from '../lib/utils'
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   label: string
@@ -34,9 +35,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)] focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_var(--accent-soft)] disabled:cursor-not-allowed disabled:opacity-60 ${
-          error ? 'border-negative' : 'border-line'
-        } ${className ?? ''}`}
+        className={cn(
+          "w-full rounded-control border bg-surface px-3 py-2 text-sm text-text placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)]",
+          "focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent focus-visible:outline-none",
+          "disabled:cursor-not-allowed disabled:opacity-60",
+          error ? "border-negative focus-visible:border-negative focus-visible:ring-negative" : "border-line",
+          className
+        )}
         {...props}
       />
       {hint && !error && (
@@ -87,9 +92,13 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`min-h-24 w-full rounded-control border bg-surface px-3 py-2 text-sm text-text placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)] focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_var(--accent-soft)] disabled:cursor-not-allowed disabled:opacity-60 ${
-          error ? 'border-negative' : 'border-line'
-        } ${className ?? ''}`}
+        className={cn(
+          "min-h-24 w-full rounded-control border bg-surface px-3 py-2 text-sm text-text placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)]",
+          "focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent focus-visible:outline-none",
+          "disabled:cursor-not-allowed disabled:opacity-60",
+          error ? "border-negative focus-visible:border-negative focus-visible:ring-negative" : "border-line",
+          className
+        )}
         {...props}
       />
       {hint && !error && (

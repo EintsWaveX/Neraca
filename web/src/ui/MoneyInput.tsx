@@ -3,6 +3,7 @@ import { formatMoney, parseMoneyInput } from '@/domain/money'
 import type { Money } from '@/domain/money'
 import { CURRENCIES } from '@/domain/currency'
 import type { CurrencyCode } from '@/domain/currency'
+import { cn } from '../lib/utils'
 
 export interface MoneyInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'value' | 'onChange' | 'type'> {
@@ -60,9 +61,13 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
           value={text}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className={`w-full rounded-control border bg-surface py-2 pl-9 pr-3 text-sm text-text tnum placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)] focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_var(--accent-soft)] disabled:cursor-not-allowed disabled:opacity-60 ${
-            error ? 'border-negative' : 'border-line'
-          } ${className ?? ''}`}
+          className={cn(
+            "w-full rounded-control border bg-surface py-2 pl-9 pr-3 text-sm text-text tnum placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--dur)] ease-[var(--ease-out)]",
+            "focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent focus-visible:outline-none",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+            error ? "border-negative focus-visible:border-negative focus-visible:ring-negative" : "border-line",
+            className
+          )}
           onFocus={(event) => {
             focused.current = true
             onFocus?.(event)

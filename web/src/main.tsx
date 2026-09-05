@@ -5,6 +5,10 @@ import App from './App.tsx'
 import { RepositoryProvider } from './app/repo'
 import { I18nProvider } from './i18n'
 import { ProfileProvider } from './app/ProfileProvider'
+import { registerSW } from 'virtual:pwa-register'
+
+// Register the service worker for the PWA
+registerSW({ immediate: true })
 
 // Provider order matters: ProfileProvider reads and writes through
 // useRepository, so it has to sit inside RepositoryProvider. I18nProvider
