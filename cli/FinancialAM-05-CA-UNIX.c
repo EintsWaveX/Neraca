@@ -1252,7 +1252,7 @@ void HorizontalHistogramUI_MONTH(const char* SourceFileTxtData, signed long long
                 FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 strtok(FinalTempTotalExpensePerDay, ","); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 FinalTempTotalExpensePerDay = strtok(FinalTempTotalExpensePerDay, "Rp"); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
-                TotalExpensePerDay += (long long)atoi(FinalTempTotalExpensePerDay);
+                TotalExpensePerDay += strtoll(FinalTempTotalExpensePerDay, NULL, 10);
                 // printf("%lld\n", TotalExpensePerDay);
             }
         
@@ -1266,7 +1266,7 @@ void HorizontalHistogramUI_MONTH(const char* SourceFileTxtData, signed long long
                 FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 strtok(FinalTempTotalExpensePerDay, ","); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 FinalTempTotalExpensePerDay = strtok(FinalTempTotalExpensePerDay, "Rp"); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
-                TotalExpensePerDay += (long long)atoi(FinalTempTotalExpensePerDay);
+                TotalExpensePerDay += strtoll(FinalTempTotalExpensePerDay, NULL, 10);
                 // printf("%lld\n", TotalExpensePerDay);
             }
         
@@ -1313,7 +1313,7 @@ void HorizontalHistogramUI_MONTH(const char* SourceFileTxtData, signed long long
                 FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 strtok(FinalTempTotalExpensePerDay, ","); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 FinalTempTotalExpensePerDay = strtok(FinalTempTotalExpensePerDay, "Rp"); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
-                TotalExpensePerDay += (long long)atoi(FinalTempTotalExpensePerDay);
+                TotalExpensePerDay += strtoll(FinalTempTotalExpensePerDay, NULL, 10);
                 // printf("%lld\n", TotalExpensePerDay);
             }
         
@@ -1358,7 +1358,7 @@ void HorizontalHistogramUI_MONTH(const char* SourceFileTxtData, signed long long
                 FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 strtok(FinalTempTotalExpensePerDay, ","); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
                 FinalTempTotalExpensePerDay = strtok(FinalTempTotalExpensePerDay, "Rp"); FinalTempTotalExpensePerDay = TrimWhiteSpaces(FinalTempTotalExpensePerDay);
-                TotalExpensePerDay += (long long)atoi(FinalTempTotalExpensePerDay);
+                TotalExpensePerDay += strtoll(FinalTempTotalExpensePerDay, NULL, 10);
                 // printf("%lld\n", TotalExpensePerDay);
             }
 
@@ -3937,19 +3937,19 @@ void F1_MoneytoryTransactionsRegister(int F1Selected) {
     TempBalanceBudget[strlen(TempBalanceBudget) - 1] = '\0';
     strtok_r(TempBalanceBudget, ":", &BalanceBudget); BalanceBudget = TrimWhiteSpaces(BalanceBudget);
     BalanceBudget = strtok(BalanceBudget, ","); strtok_r(BalanceBudget, "p", &BalanceBudget);
-    MonthlyBalanceBudget = (long long)atoi(BalanceBudget);
+    MonthlyBalanceBudget = strtoll(BalanceBudget, NULL, 10);
     
     strncpy(TempTrackIncomes, ReadAndPrintLine("TempDestination02.txt", 16), BUFSIZE07);
     TempTrackIncomes[strlen(TempTrackIncomes) - 1] = '\0';
     strtok_r(TempTrackIncomes, ":", &TrackIncomes); TrackIncomes = TrimWhiteSpaces(TrackIncomes);
     TrackIncomes = strtok(TrackIncomes, ","); strtok_r(TrackIncomes, "p", &TrackIncomes);
-    MonthlyTrackIncomes = (long long)atoi(TrackIncomes);
+    MonthlyTrackIncomes = strtoll(TrackIncomes, NULL, 10);
     
     strncpy(TempTrackExpenses, ReadAndPrintLine("TempDestination02.txt", 17), BUFSIZE07);
     TempTrackExpenses[strlen(TempTrackExpenses) - 1] = '\0';
     strtok_r(TempTrackExpenses, ":", &TrackExpenses); TrackExpenses = TrimWhiteSpaces(TrackExpenses);
     TrackExpenses = strtok(TrackExpenses, ","); strtok_r(TrackExpenses, "p", &TrackExpenses);
-    MonthlyTrackExpenses = (long long)atoi(TrackExpenses);
+    MonthlyTrackExpenses = strtoll(TrackExpenses, NULL, 10);
 
     strcpy(DeleteTempDestinationTxtFile, "rm "); strcat(DeleteTempDestinationTxtFile, "TempDestination02.txt");
     system(DeleteTempDestinationTxtFile);
@@ -4086,7 +4086,7 @@ void F1_MoneytoryTransactionsRegister(int F1Selected) {
                         strtok_r(TempSpentMoney, ":", &SpentMoney); SpentMoney = TrimWhiteSpaces(SpentMoney);
                         strtok_r(SpentMoney, "p", &SpentMoney); SpentMoney = TrimWhiteSpaces(SpentMoney);
                         SpentMoney = strtok(SpentMoney, ","); SpentMoney = TrimWhiteSpaces(SpentMoney);
-                        PerDaySpentMoney = (long long)atoi(SpentMoney);
+                        PerDaySpentMoney = strtoll(SpentMoney, NULL, 10);
 
                         snprintf(DisplayBB, BUFSIZE07, "Current Remaining Monthly Budget: Rp%lld,00", (strstr(IncomeOrExpense, "Income(s)") != NULL) ? (MonthlyBalanceBudget + PerDaySpentMoney) : (MonthlyBalanceBudget - PerDaySpentMoney));
                         snprintf(DisplayTI, BUFSIZE07, "+++ Income(s):  Rp%lld,00", (strstr(IncomeOrExpense, "Income(s)") != NULL) ? (MonthlyTrackIncomes + PerDaySpentMoney) : (MonthlyTrackIncomes + 0));
@@ -4231,7 +4231,7 @@ void F1_MoneytoryTransactionsRegister(int F1Selected) {
                         strtok_r(TempSpentMoney, ":", &SpentMoney); SpentMoney = TrimWhiteSpaces(SpentMoney);
                         strtok_r(SpentMoney, "p", &SpentMoney); SpentMoney = TrimWhiteSpaces(SpentMoney);
                         SpentMoney = strtok(SpentMoney, ","); SpentMoney = TrimWhiteSpaces(SpentMoney);
-                        PerDaySpentMoney = (long long)atoi(SpentMoney);
+                        PerDaySpentMoney = strtoll(SpentMoney, NULL, 10);
 
                         snprintf(DisplayBB, BUFSIZE07, "Current Remaining Monthly Budget: Rp%lld,00", (strstr(IncomeOrExpense, "Income(s)") != NULL) ? (MonthlyBalanceBudget + PerDaySpentMoney) : (MonthlyBalanceBudget - PerDaySpentMoney));
                         snprintf(DisplayTI, BUFSIZE07, "+++ Income(s):  Rp%lld,00", (strstr(IncomeOrExpense, "Income(s)") != NULL) ? (MonthlyTrackIncomes + PerDaySpentMoney) : (MonthlyTrackIncomes + 0));
@@ -6425,7 +6425,7 @@ void AccountRegistrationMenu(int ARMSelected) {
             printf(ANSI_COLOR_LIGHTBLUE"\n\n\n\n\t────────────────────────────────────────────────────────────────────────────────────────────────────\n\t%s\t%s\t\n\t"ANSI_COLOR_RESET ANSI_COLOR_LIGHTMAGENTA"%s\t────────────────────────────────────────────────────────────────────────────────────────────────────\n\n"ANSI_COLOR_RESET, ApplicationTitle, ApplicationVersion, AppRegisterUI);
             
             printf(ANSI_COLOR_LIGHTRED"\tWarning: Before inserting your present age in here, make sure to fill in your \n\t\t date of birth, considering that there'll be a checking if your present \n\t\t age is a valid!\n\n"ANSI_COLOR_RESET);
-            printf(ANSI_COLOR_LIGHTORANGE"\tDate of Birth:\t\t(your birthdate)\n      " ANSI_COLOR_LIGHTYELLOW"> Age on Present:\t\t%s\n\t"ANSI_COLOR_RESET "Phone Number:\t\t%s\n\tSex/Gender:\t\t%s\n", ARMInputs.DateOfBirth, ARMInputs.AgeOnPresent, ARMInputs.PhoneNumber, ARMInputs.Sex);
+            printf(ANSI_COLOR_LIGHTORANGE"\tDate of Birth:\t\t%s\n      " ANSI_COLOR_LIGHTYELLOW"> Age on Present:\t\t%s\n\t"ANSI_COLOR_RESET "Phone Number:\t\t%s\n\tSex/Gender:\t\t%s\n", ARMInputs.DateOfBirth, ARMInputs.AgeOnPresent, ARMInputs.PhoneNumber, ARMInputs.Sex);
             printf(ANSI_COLOR_LIGHTMAGENTA"\n\tPlease proceed back to the registration menu by pressing your [ENTER] button \n\tkey on the keyboard. "ANSI_COLOR_RESET); _getch();
             AccountRegistrationMenu(ARMSelected);
         } ClearScreen();
