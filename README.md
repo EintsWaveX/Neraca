@@ -5,7 +5,7 @@ console program it grew out of.**
 
 | Build | Where | What it is |
 |---|---|---|
-| **Web** | [eintswavex.github.io/FinancialAM](https://eintswavex.github.io/FinancialAM/) | React and TypeScript, runs entirely in the browser, no server |
+| **Web** | [financial-am.vercel.app](https://financial-am.vercel.app/) | React and TypeScript, runs entirely in the browser, no server |
 | **Console** | `cli/` | The original, 8,281 lines of C using only the standard library plus Win32 |
 
 Both are maintained. The console version is the lightweight build, not an

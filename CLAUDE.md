@@ -26,15 +26,22 @@ is wrong should say so and wait, not act.
 
 1. **Client side only.** Data lives in the visitor's own browser through
    IndexedDB. There is no server. This is what allows the app to be a static
-   page on GitHub Pages at no cost and with nothing to operate. Persistence sits
+   page on a static host at no cost and with nothing to operate. Persistence sits
    behind the `Repository` interface in `src/data/repository.ts` so a server
    backed implementation is a drop in replacement later, but adding one now is
    out of scope.
 2. **React, TypeScript, Vite, Tailwind.** Chosen because it is the stack the
    roles I am applying for actually use. TypeScript is not decoration here: the
    app does money arithmetic across currencies, and the types are load bearing.
-3. **Its own repository, its own Pages site.** Deployed to
-   `eintswavex.github.io/FinancialAM/`, not folded into the portfolio repository.
+3. **Its own repository, its own deployment.** Deployed to Vercel at
+   `financial-am.vercel.app`, not folded into the portfolio repository. This
+   started on GitHub Pages and moved once the app wanted things a repository
+   subpath makes awkward: a root `base`, so the service worker scope and the
+   manifest `start_url` are the whole origin rather than a folder inside it,
+   real SPA rewrites in place of a copied `404.html`, and per path cache
+   headers. The Git integration on the Vercel side is switched off in
+   `web/vercel.json`, so the workflows named below are the only path to a
+   deploy.
 4. **Rebuilt as a product, not ported as coursework.** The unfinished parts of
    the C version get finished rather than faithfully reproduced. The bugs get
    fixed rather than preserved.
@@ -97,5 +104,7 @@ npx vitest run                            # all green
 npm run build                             # must succeed
 ```
 
-The deploy workflow runs all three, so a broken typecheck or a failing test
-blocks the release rather than reaching the live site.
+Both deploy workflows run all three ahead of the deploy itself:
+`.github/workflows/vercel-production.yml` on a push to `main` and
+`.github/workflows/vercel-preview.yml` on a pull request. A broken typecheck
+or a failing test blocks the release rather than reaching the live site.
