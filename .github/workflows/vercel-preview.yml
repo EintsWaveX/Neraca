@@ -4,12 +4,28 @@ name: Vercel PR Preview
 # off in web/vercel.json, so this workflow is the only thing that deploys a
 # preview, which is what lets the verification gates below actually block one.
 
+# DORMANT ON PURPOSE. GitHub Actions is locked account wide by a billing issue,
+# so this workflow cannot run: the last attempt failed in three seconds with
+# "The job was not started because your account is locked due to a billing
+# issue". Rather than leave the app with no way to deploy at all, Vercel's own
+# Git integration was switched back on in web/vercel.json and the same three
+# gates moved into its buildCommand, where a failing typecheck or test fails
+# the deployment without spending an Actions minute.
+#
+# This file is kept because it is the better shape once billing clears: the
+# gates show up as pull request checks, and deploys go through one reviewable
+# path. To restore it, clear the lock, set "deploymentEnabled" back to false in
+# web/vercel.json, drop the buildCommand there, and put the real trigger below
+# back. Leaving both live would deploy every change twice.
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'web/**'
-      - '.github/workflows/vercel-preview.yml'
+  # The real trigger, restored when the billing lock clears:
+  #   pull_request:
+  #     types: [opened, synchronize, reopened]
+  #     paths:
+  #       - 'web/**'
+  #       - '.github/workflows/vercel-preview.yml'
+  workflow_dispatch:
 
 concurrency:
   group: vercel-preview-${{ github.event.number }}

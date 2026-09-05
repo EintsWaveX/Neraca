@@ -2,8 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "git": {
-    "deploymentEnabled": false
+    "deploymentEnabled": true
   },
+  "buildCommand": "npx tsc -p tsconfig.app.json --noEmit && npx vitest run && npm run build",
   "rewrites": [
     {
       "source": "/(.*)",

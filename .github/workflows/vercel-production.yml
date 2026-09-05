@@ -4,12 +4,27 @@ name: Deploy to Vercel
 # before. Vercel's own Git integration is switched off in web/vercel.json, so
 # production is deployed here and only after the three gates below pass.
 
+# DORMANT ON PURPOSE. GitHub Actions is locked account wide by a billing issue,
+# so this workflow cannot run: the last attempt failed in three seconds with
+# "The job was not started because your account is locked due to a billing
+# issue". Rather than leave the app with no way to deploy at all, Vercel's own
+# Git integration was switched back on in web/vercel.json and the same three
+# gates moved into its buildCommand, where a failing typecheck or test fails
+# the deployment without spending an Actions minute.
+#
+# This file is kept because it is the better shape once billing clears: the
+# gates show up as pull request checks, and deploys go through one reviewable
+# path. To restore it, clear the lock, set "deploymentEnabled" back to false in
+# web/vercel.json, drop the buildCommand there, and put the real trigger below
+# back. Leaving both live would deploy every change twice.
+
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'web/**'
-      - '.github/workflows/vercel-production.yml'
+  # The real trigger, restored when the billing lock clears:
+  #   push:
+  #     branches: [main]
+  #     paths:
+  #       - 'web/**'
+  #       - '.github/workflows/vercel-production.yml'
   workflow_dispatch:
 
 # Never let two deploys race. A queued run replaces an older queued run, but an

@@ -39,9 +39,8 @@ is wrong should say so and wait, not act.
    subpath makes awkward: a root `base`, so the service worker scope and the
    manifest `start_url` are the whole origin rather than a folder inside it,
    real SPA rewrites in place of a copied `404.html`, and per path cache
-   headers. The Git integration on the Vercel side is switched off in
-   `web/vercel.json`, so the workflows named below are the only path to a
-   deploy.
+   headers. Deploys run through Vercel's own Git integration, gated by the
+   `buildCommand` in `web/vercel.json`.
 4. **Rebuilt as a product, not ported as coursework.** The unfinished parts of
    the C version get finished rather than faithfully reproduced. The bugs get
    fixed rather than preserved.
@@ -104,7 +103,12 @@ npx vitest run                            # all green
 npm run build                             # must succeed
 ```
 
-Both deploy workflows run all three ahead of the deploy itself:
-`.github/workflows/vercel-production.yml` on a push to `main` and
-`.github/workflows/vercel-preview.yml` on a pull request. A broken typecheck
-or a failing test blocks the release rather than reaching the live site.
+The `buildCommand` in `web/vercel.json` runs all three, so a broken typecheck
+or a failing test fails the deployment rather than reaching the live site.
+Vercel builds every pull request to its own preview URL on the same terms.
+
+The two workflows under `.github/workflows/` do the same job better, because
+the gates surface as pull request checks rather than as a build log, but they
+are dormant: GitHub Actions is locked account wide by a billing issue and
+cannot run at all. Each carries the note explaining how to restore it. Do not
+enable both paths at once, or every change deploys twice.
