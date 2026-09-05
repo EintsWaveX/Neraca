@@ -56,6 +56,29 @@ import { convert } from '@/domain/money'
 /** Fixed so the generated data never depends on when this code runs. */
 const REFERENCE_DATE: IsoDate = '2026-08-23'
 
+/**
+ * Today's date, for the app to hand to `buildDemoBackup` at runtime.
+ *
+ * The determinism note above is about the generator, not about the anchor the
+ * caller chooses. Leaving the anchor on REFERENCE_DATE everywhere looked
+ * deterministic and was, but it also meant the demo aged: the dashboard reads
+ * income, expense and net balance for the current calendar month, so once the
+ * wall clock passed August 2026 a first time visitor landed on three cards
+ * reading zero while the table below them was full of transactions. The app
+ * looked broken when it was working exactly as written.
+ *
+ * So the wall clock is read here, in one place, and only by the two runtime
+ * call sites. Tests and screenshots keep calling `buildDemoBackup()` with no
+ * argument, get REFERENCE_DATE, and stay byte for byte reproducible. The PRNG
+ * seed does not move either way, so shifting the anchor slides the same
+ * fourteen month story forward rather than generating a different one.
+ */
+export function todayIso(): IsoDate {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` as IsoDate
+}
+
 /** A literal, not a call to any clock. See the determinism note above. */
 const SEED = 20260823
 
@@ -307,12 +330,25 @@ export function buildDemoBackup(today: IsoDate = REFERENCE_DATE): ProfileBackup 
     const currency = params.currency ?? 'IDR'
     const hour = params.hour ?? randInt(rand, 7, 21)
     const minute = params.minute ?? randInt(rand, 0, 59)
+    // No demo row may be dated in the future. Most generators below already
+    // pick their day with Math.min(..., span.lastDay), but roughly a third use
+    // a fixed or random day that was safe only because the old reference date
+    // sat on the 23rd of its month. Anchoring the demo to the real today
+    // exposed them: on the 5th of a month, a standing order written for the
+    // 15th landed ten days ahead of the wall clock, and the app showed a
+    // person money they had not spent yet. The clamp lives here, at the one
+    // place every row passes through, rather than at the thirty call sites
+    // that would each have to remember.
+    //
+    // ISO dates compare correctly as strings, which is why this is a plain
+    // comparison and not a Date construction.
+    const date = params.date > today ? today : params.date
     const tx: Transaction = {
       id: mkId('txn'),
       profileId,
       walletId: params.walletId,
       toWalletId: params.toWalletId ?? null,
-      date: params.date,
+      date,
       direction: params.direction,
       typeId: params.typeId,
       categoryId: params.categoryId,
@@ -322,7 +358,7 @@ export function buildDemoBackup(today: IsoDate = REFERENCE_DATE): ProfileBackup 
       rateToBase: params.rateToBase ?? 1,
       description: params.description,
       recurringId: params.recurringId ?? null,
-      createdAt: stampAt(params.date, hour, minute),
+      createdAt: stampAt(date, hour, minute),
     }
     transactions.push(tx)
     return tx

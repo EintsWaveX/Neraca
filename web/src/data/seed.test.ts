@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDemoBackup } from './seed'
+import { buildDemoBackup, todayIso } from './seed'
 import { CATEGORY_BY_ID } from '@/domain/categories'
 import { TRANSACTION_TYPE_BY_ID } from '@/domain/txTypes'
 import { convert } from '@/domain/money'
@@ -347,6 +347,68 @@ describe('the demo describes a life that could actually be lived', () => {
       // A destination amount only earns its place when the currencies differ.
       expect(from?.currency).not.toBe(to?.currency)
       expect(tx.toAmount).toBeGreaterThan(0)
+    }
+  })
+})
+
+/**
+ * The dashboard reads income, expense and net balance for the current
+ * calendar month. The demo is generated from a fixed reference date, so
+ * without an anchor the app quietly rotted: every visitor after August 2026
+ * met three cards reading zero above a table full of transactions. These pin
+ * the fix from both ends, because the whole point is that one of them keeps
+ * holding as the wall clock moves.
+ */
+describe('anchoring to today', () => {
+  it('reports today in the yyyy-MM-dd shape an IsoDate requires', () => {
+    expect(todayIso()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('puts transactions in the current calendar month, so the dashboard cards are never all zero', () => {
+    const backup = buildDemoBackup(todayIso())
+    const thisMonth = todayIso().slice(0, 7)
+    const inMonth = backup.transactions.filter((tx) => tx.date.startsWith(thisMonth))
+    expect(inMonth.length).toBeGreaterThan(0)
+  })
+
+  it('carries both an income and an expense into the current month, since the cards show one of each', () => {
+    const backup = buildDemoBackup(todayIso())
+    const thisMonth = todayIso().slice(0, 7)
+    const inMonth = backup.transactions.filter((tx) => tx.date.startsWith(thisMonth))
+    expect(inMonth.some((tx) => tx.direction === 'income')).toBe(true)
+    expect(inMonth.some((tx) => tx.direction === 'expense')).toBe(true)
+  })
+
+  it('still produces identical output for a repeated explicit anchor, so determinism survives the change', () => {
+    const anchor = todayIso()
+    expect(buildDemoBackup(anchor)).toEqual(buildDemoBackup(anchor))
+  })
+})
+
+describe('no future dating', () => {
+  it('never dates a transaction after the anchor, whatever day of the month it falls on', () => {
+    // The 3rd is deliberate: it is early enough that every generator using a
+    // fixed mid-month day would overshoot without the clamp in mkTx.
+    const backup = buildDemoBackup('2026-09-03')
+    const beyond = backup.transactions.filter((tx) => tx.date > '2026-09-03')
+    expect(beyond).toEqual([])
+  })
+
+  it('holds on the first of a month, the worst case for a fixed-day generator', () => {
+    const backup = buildDemoBackup('2026-09-01')
+    expect(backup.transactions.filter((tx) => tx.date > '2026-09-01')).toEqual([])
+  })
+
+  it('holds for today, which is what a visitor actually loads', () => {
+    const anchor = todayIso()
+    const backup = buildDemoBackup(anchor)
+    expect(backup.transactions.filter((tx) => tx.date > anchor)).toEqual([])
+  })
+
+  it('keeps createdAt in step with the clamped date rather than the original', () => {
+    const backup = buildDemoBackup('2026-09-03')
+    for (const tx of backup.transactions) {
+      expect(tx.createdAt.slice(0, 10)).toBe(tx.date)
     }
   })
 })

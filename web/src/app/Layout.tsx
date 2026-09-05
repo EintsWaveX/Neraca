@@ -1,3 +1,9 @@
+/* eslint-disable jsx-a11y/prefer-tag-over-role */
+// The rule suggests a semantic tag in place of the one role="group" in this
+// file, on the locale switch. The suggestions it offers are fieldset and
+// friends, and a fieldset would announce the pair of buttons as part of a
+// form they do not belong to. A labelled group is the correct role here.
+
 /**
  * The application shell.
  *
@@ -14,16 +20,6 @@ import { useI18n } from '@/i18n'
 import { useProfile, useProfiles } from './ProfileProvider'
 import { ThemeToggle } from '@/ui'
 
-import {
-  LayoutDashboard,
-  ArrowRightLeft,
-  Wallet,
-  PieChart,
-  Repeat,
-  BarChart3,
-  Settings
-} from 'lucide-react'
-
 interface NavItem {
   to: string
   /** Matches a key under the `nav` dictionary group. */
@@ -34,13 +30,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', labelKey: 'dashboard', icon: <LayoutDashboard />, end: true },
-  { to: '/transactions', labelKey: 'transactions', icon: <ArrowRightLeft /> },
-  { to: '/wallets', labelKey: 'wallets', icon: <Wallet /> },
-  { to: '/budgets', labelKey: 'budgets', icon: <PieChart /> },
-  { to: '/recurring', labelKey: 'recurring', icon: <Repeat /> },
-  { to: '/reports', labelKey: 'reports', icon: <BarChart3 /> },
-  { to: '/settings', labelKey: 'settings', icon: <Settings /> },
+  { to: '/', labelKey: 'dashboard', icon: <GridIcon />, end: true },
+  { to: '/transactions', labelKey: 'transactions', icon: <SwapIcon /> },
+  { to: '/wallets', labelKey: 'wallets', icon: <WalletIcon /> },
+  { to: '/budgets', labelKey: 'budgets', icon: <PieIcon /> },
+  { to: '/recurring', labelKey: 'recurring', icon: <RepeatIcon /> },
+  { to: '/reports', labelKey: 'reports', icon: <BarsIcon /> },
+  { to: '/settings', labelKey: 'settings', icon: <GearIcon /> },
 ]
 
 export function Layout() {
@@ -223,4 +219,83 @@ function LocaleSwitch({
   )
 }
 
+// Deliberately plain, minimal-stroke icons in the same style as the ones
+// already in src/ui (viewBox 0 0 20 20, stroke currentColor), so the nav
+// does not introduce a second icon language.
+function GridIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="11.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="2.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="11.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
 
+function SwapIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 7h11l-3-3M16 13H5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function WalletIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2.5" y="5" width="15" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M2.5 8h15" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="14" cy="12" r="1" fill="currentColor" />
+    </svg>
+  )
+}
+
+function PieIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      {/* A circle with two radii. The previous single path used SVG arc flags
+          in compact form ("0 1010 2.5"), which the renderer read as a
+          malformed arc and dropped, leaving only the two straight segments
+          showing as a corner glyph. */}
+      <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 10V2.75M10 10h7.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function RepeatIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M4 9V7a3 3 0 013-3h8m0 0l-2.5-2.5M15 4l-2.5 2.5M16 11v2a3 3 0 01-3 3H5m0 0l2.5 2.5M5 16l2.5-2.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function BarsIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 16V9M10 16V4M16 16v-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M10 3v1.6M10 15.4V17M17 10h-1.6M4.6 10H3M14.8 5.2l-1.1 1.1M6.3 13.7l-1.1 1.1M14.8 14.8l-1.1-1.1M6.3 6.3L5.2 5.2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}

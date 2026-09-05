@@ -1,5 +1,4 @@
 import { forwardRef, useId, type SelectHTMLAttributes } from 'react'
-import { ChevronDown } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> {
@@ -51,10 +50,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         >
           {children}
         </select>
-        <ChevronDown
+        <svg
           aria-hidden="true"
+          viewBox="0 0 20 20"
+          fill="none"
           className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
-        />
+        >
+          <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
       {hint && !error && (
         <p id={hintId} className="text-xs text-muted">

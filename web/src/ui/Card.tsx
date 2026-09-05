@@ -34,7 +34,7 @@ export function CardHeader({ className, ...props }: CardHeaderProps) {
 export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
 
 export function CardTitle({ className, ...props }: CardTitleProps) {
-  return <h3 className={cn("text-base font-semibold text-text tracking-tight", className)} {...props} />
+  return <h3 className={cn("text-sm font-semibold text-text", className)} {...props} />
 }
 
 export interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {}

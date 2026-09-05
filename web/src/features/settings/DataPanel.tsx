@@ -26,7 +26,7 @@ import {
 import { useI18n, type T } from '@/i18n'
 import { useProfile, useProfiles } from '@/app/ProfileProvider'
 import { useAsync, useRepository } from '@/app/repo'
-import { buildDemoBackup } from '@/data/seed'
+import { buildDemoBackup, todayIso } from '@/data/seed'
 import {
   Button, Card, CardBody, CardHeader, CardTitle, Input, Modal, Select, Textarea,
 } from '@/ui'
@@ -657,7 +657,7 @@ function RestoreDemoSection() {
   async function restore() {
     setBusy(true)
     try {
-      const id = await repo.importProfile(buildDemoBackup())
+      const id = await repo.importProfile(buildDemoBackup(todayIso()))
       await refresh()
       select(id)
     } finally {

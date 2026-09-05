@@ -15,7 +15,7 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react'
 import type { Profile } from '@/domain/types'
-import { buildDemoBackup } from '@/data/seed'
+import { buildDemoBackup, todayIso } from '@/data/seed'
 import { useRepository } from './repo'
 
 const SELECTED_KEY = 'financialam.profile'
@@ -71,7 +71,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       let rows = await repo.listProfiles()
 
       if (rows.length === 0) {
-        await repo.importProfile(buildDemoBackup())
+        // Anchored to today, not to the seed's reference date, so the
+        // dashboard's current month cards are never empty on a first visit.
+        await repo.importProfile(buildDemoBackup(todayIso()))
         rows = await repo.listProfiles()
       }
       if (!live) return

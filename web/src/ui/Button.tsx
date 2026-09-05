@@ -14,9 +14,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
+  // The soft shadow on hover/focus is the one glow this design system uses
+  // outside the active nav item, derived from --accent-glow (itself
+  // color-mix'd from --accent) rather than a hardcoded colour, so a primary
+  // button reads as the call to action without a second accent colour.
   primary: 'bg-accent text-accent-text hover:bg-accent-hover hover:shadow-[0_0_16px_var(--accent-glow)] focus-visible:shadow-[0_0_16px_var(--accent-glow)]',
   secondary: 'bg-surface text-text border border-line hover:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-accent',
   ghost: 'bg-transparent text-text hover:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-accent',
+  // The negative token sits at nearly the same lightness as accent in both
+  // themes (see src/index.css), so accent-text, the token built for "text on
+  // top of a saturated, mid-lightness surface", also reads correctly here
+  // without inventing a colour the rest of the design system does not know.
   danger: 'bg-negative text-accent-text hover:opacity-90',
 }
 
@@ -36,9 +44,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={isDisabled}
       aria-busy={loading || undefined}
+      // The lift and press live on transform, never on padding or border, so
+      // they cost no layout: hovering nudges the button up a hair, pressing
+      // it settles back down and slightly smaller, the same feedback a
+      // physical button gives. Disabled buttons get neither, since there is
+      // nothing to invite a press toward. The transition names its properties
+      // rather than using transition-all, so a variant adding a border or a
+      // filter does not silently animate it too.
       className={cn(
-        "inline-flex items-center justify-center rounded-control font-medium transition-all duration-[var(--dur)] ease-[var(--ease-out)]",
-        "hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
+        "inline-flex items-center justify-center rounded-control font-medium transition-[color,background-color,box-shadow,transform] duration-[var(--dur)] ease-[var(--ease-out)]",
+        "hover:-translate-y-px active:translate-y-0 active:scale-[0.97]",
         "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100",
         variantClasses[variant],
         sizeClasses[size],

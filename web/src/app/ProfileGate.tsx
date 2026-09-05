@@ -208,6 +208,12 @@ function CreateProfileModal({
           }}
           error={error ?? undefined}
           required
+          // The rule exists to stop a page stealing focus from whatever the
+          // visitor was already doing. This input is the only thing inside a
+          // modal that just opened in response to their own click, which is
+          // the case the rule itself carves out.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus
         />
         <Select
           label={t.profile.fields.baseCurrency}
@@ -275,6 +281,12 @@ function PinScreen({
               onChange={(event) => setPin(event.target.value)}
               error={error ?? undefined}
               required
+              // The PIN screen is the whole page and this is its only field,
+              // so there is no other focus to steal. Without this the screen
+              // opens with focus nowhere and needs a Tab before it can be
+              // typed into.
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
             />
             <Button type="submit" loading={checking} disabled={pin.length === 0}>
               {t.common.ok}

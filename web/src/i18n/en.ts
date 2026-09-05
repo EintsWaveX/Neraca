@@ -372,4 +372,10 @@ export const en = {
     exchangeRates: 'No exchange rates yet. Add one to convert other currencies.',
     reportsData: 'Nothing to show yet. Add some transactions first.',
   },
+
+  update: {
+    available: 'A new version of FinancialAM is ready.',
+    reload: 'Reload',
+    dismiss: 'Not now',
+  },
 }

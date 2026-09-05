@@ -373,4 +373,10 @@ export const id: typeof en = {
     exchangeRates: 'Belum ada kurs. Tambahkan satu untuk mengonversi mata uang lain.',
     reportsData: 'Belum ada yang bisa ditampilkan. Tambahkan beberapa transaksi terlebih dahulu.',
   },
+
+  update: {
+    available: 'Versi baru FinancialAM sudah siap.',
+    reload: 'Muat ulang',
+    dismiss: 'Nanti saja',
+  },
 }

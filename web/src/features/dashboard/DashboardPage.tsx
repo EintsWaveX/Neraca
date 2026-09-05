@@ -153,11 +153,19 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="animate-rise-in lg:col-span-1" style={staggerStyle(0)}>
+        {/*
+          `self-start` matters here. A grid row stretches every cell to the
+          height of its tallest, which is the wallet list beside this card, so
+          without it this card inherited that height and centred one short line
+          inside roughly three hundred pixels of empty surface. Sizing to its
+          own content is what keeps the row from reading as an unfinished
+          layout.
+        */}
+        <Card className="animate-rise-in self-start lg:col-span-1" style={staggerStyle(0)}>
           <CardHeader>
             <CardTitle>{t.wallet.totalBalance}</CardTitle>
           </CardHeader>
-          <CardBody className="flex h-full items-center">
+          <CardBody>
             <p className={`text-2xl font-semibold tnum sm:text-3xl ${worth && worth.minor < 0 ? 'text-negative' : 'text-text'}`}>
               {worth ? formatMoney({ minor: Math.round(animatedWorth), currency: worth.currency }) : '-'}
             </p>

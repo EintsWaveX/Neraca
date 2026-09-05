@@ -1,5 +1,11 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */
+// Both rules fire on the onClick below, which is how a click outside the card
+// dismisses the dialog. They ask for a keyboard equivalent, and a native
+// <dialog> opened with showModal() already has one: Escape, which the browser
+// turns into a cancel then a close, handled in the effect below. Adding a key
+// handler would duplicate behaviour the element gives for free.
+
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react'
-import { X } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 export interface ModalProps {
@@ -75,7 +81,7 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
       aria-labelledby={titleId}
       onClick={handleBackdropClick}
       className={cn(
-        "m-auto max-h-[85vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-0 text-text shadow-[var(--shadow-pop)] backdrop:bg-[oklch(0%_0_0/0.45)] backdrop:backdrop-blur-[2px]",
+        "m-auto max-h-[85vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-card border border-line bg-surface p-0 text-text shadow-[var(--shadow-pop)] backdrop:bg-[oklch(0%_0_0/0.5)]",
         className
       )}
     >
@@ -89,7 +95,9 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
           aria-label="Close dialog"
           className="rounded-control p-1 text-muted hover:bg-surface-sunken hover:text-text transition-colors"
         >
-          <X className="h-4 w-4" aria-hidden="true" />
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
         </button>
       </div>
       <div className="px-5 py-4">{children}</div>

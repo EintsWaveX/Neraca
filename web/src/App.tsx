@@ -52,9 +52,9 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  // The app is served from a GitHub Pages project subpath, so every route
-  // and every history push has to be relative to that subpath, not the
-  // domain root.
+  // Vercel serves the app from the domain root, so BASE_URL is '/' and this
+  // is a no-op today. It stays threaded through rather than hardcoded so a
+  // move back to a subpath host needs only the `base` in vite.config.ts.
   { basename: import.meta.env.BASE_URL },
 )
 
