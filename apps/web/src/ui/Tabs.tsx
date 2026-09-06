@@ -31,7 +31,11 @@ export function Tabs({ items, value, defaultValue, onChange, label, className }:
     onChange?.(id)
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  // On the tabs rather than on the tablist. Focus is always on a tab under the
+  // roving tabindex below, so the two are equivalent in behaviour, but a
+  // tablist carrying a key handler is a tablist that ought to be focusable and
+  // this one deliberately is not.
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return
     const enabled = items.map((item, index) => ({ item, index })).filter(({ item }) => !item.disabled)
     if (enabled.length === 0) return
@@ -51,7 +55,7 @@ export function Tabs({ items, value, defaultValue, onChange, label, className }:
 
   return (
     <div className={className}>
-      <div role="tablist" aria-label={label} onKeyDown={handleKeyDown} className="flex gap-1 border-b border-line">
+      <div role="tablist" aria-label={label} className="flex gap-1 border-b border-line">
         {items.map((item, index) => {
           const selected = item.id === active
           return (
@@ -62,6 +66,7 @@ export function Tabs({ items, value, defaultValue, onChange, label, className }:
               }}
               role="tab"
               type="button"
+              onKeyDown={handleKeyDown}
               id={`${uid}-tab-${item.id}`}
               aria-selected={selected}
               aria-controls={`${uid}-panel-${item.id}`}

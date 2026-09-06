@@ -116,6 +116,7 @@ function Ledger({ replayKey }: { replayKey: number }) {
   const rows = useMemo(() => {
     let balance = OPENING
     return ENTRIES.map((entry) => {
+      // oxlint-disable-next-line react/immutability -- a local accumulator inside the memo factory, not state reassigned after a render.
       balance += entry.minor
       return { ...entry, balance }
     })
@@ -184,6 +185,7 @@ function Ledger({ replayKey }: { replayKey: number }) {
             </tr>
           ))}
           <tr role="row" className="ledger-total">
+            {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- an empty cell in a totals row is not a control and has nothing to label. */}
             <td role="cell" className="c-date" />
             <td role="cell" className="c-desc pt-2 text-sm text-ink-muted">
               Net movement

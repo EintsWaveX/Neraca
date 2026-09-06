@@ -287,6 +287,7 @@ function CsvImportSection() {
     if (walletId !== '' || !wallets || wallets.length === 0) return
     const first = wallets[0]
     if (!first) return
+    // oxlint-disable-next-line react/set-state-in-effect -- picks a default once the wallets arrive from storage, which is asynchronous and so cannot be an initial state value.
     setWalletId(first.id)
     setCurrency(first.currency)
   }, [wallets, walletId])

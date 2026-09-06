@@ -42,6 +42,9 @@ function clampedPercent(fraction: number): number {
   return Math.max(0, Math.min(100, Math.round(fraction * 100)))
 }
 
+/** One shared empty array, so "still loading" keeps a stable identity. */
+const NONE: never[] = []
+
 export default function BudgetsPage() {
   const repo = useRepository()
   const profile = useProfile()
@@ -55,7 +58,11 @@ export default function BudgetsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Budget | null>(null)
 
   const budgetsAsync = useAsync(() => repo.listBudgets(profile.id), [repo, profile.id])
-  const budgets = budgetsAsync.data ?? []
+  // NONE rather than a fresh [] each render: an inline literal is a new
+  // identity every time, so while either query is still loading it invalidated
+  // every useMemo below and the page recomputed its budget evaluations on each
+  // render for nothing.
+  const budgets = budgetsAsync.data ?? NONE
 
   const periodBudgets = useMemo(
     () => budgets.filter((budget) => budget.period === period && budget.periodKey === periodKey),
@@ -79,7 +86,7 @@ export default function BudgetsPage() {
     }),
     [repo, profile.id, periodRange.start, periodRange.end],
   )
-  const transactions = transactionsAsync.data ?? []
+  const transactions = transactionsAsync.data ?? NONE
 
   const statuses = useMemo(
     () => periodBudgets.map((budget) => evaluateBudget(budget, transactions, profile.baseCurrency)),

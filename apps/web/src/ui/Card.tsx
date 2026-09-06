@@ -40,8 +40,15 @@ export function CardHeader({ className, ...props }: CardHeaderProps) {
 
 export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
 
-export function CardTitle({ className, ...props }: CardTitleProps) {
-  return <h3 className={cn("text-h3 leading-snug text-ink", className)} {...props} />
+export function CardTitle({ className, children, ...props }: CardTitleProps) {
+  // Children are named rather than spread so a heading with no content is a
+  // type error and a lint error here, instead of an empty <h3> that a screen
+  // reader announces as a heading and then says nothing about.
+  return (
+    <h3 className={cn("text-h3 leading-snug text-ink", className)} {...props}>
+      {children}
+    </h3>
+  )
 }
 
 export interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {}
