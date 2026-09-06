@@ -1,29 +1,39 @@
 name: Vercel PR Preview
 
 # Preview deploys for pull requests. Vercel's own Git integration is switched
-# off in web/vercel.json, so this workflow is the only thing that deploys a
+# off in vercel.json, so this workflow is the only thing that deploys a
 # preview, which is what lets the verification gates below actually block one.
 
 # DORMANT ON PURPOSE. GitHub Actions is locked account wide by a billing issue,
 # so this workflow cannot run: the last attempt failed in three seconds with
 # "The job was not started because your account is locked due to a billing
 # issue". Rather than leave the app with no way to deploy at all, Vercel's own
-# Git integration was switched back on in web/vercel.json and the same three
-# gates moved into its buildCommand, where a failing typecheck or test fails
+# Git integration was switched back on in vercel.json and the same gates moved
+# into its buildCommand, where a failing typecheck, test or bundle budget fails
 # the deployment without spending an Actions minute.
 #
 # This file is kept because it is the better shape once billing clears: the
 # gates show up as pull request checks, and deploys go through one reviewable
 # path. To restore it, clear the lock, set "deploymentEnabled" back to false in
-# web/vercel.json, drop the buildCommand there, and put the real trigger below
+# vercel.json, drop the buildCommand there, and put the real trigger below
 # back. Leaving both live would deploy every change twice.
+#
+# Kept current with the tree even though it cannot run. The paths below were
+# written when the web build lived in web/ and the workspaces did not exist,
+# which would have failed on a directory that has not been there since the
+# restructure: a confusing error to meet on the day billing clears.
 
 on:
   # The real trigger, restored when the billing lock clears:
   #   pull_request:
   #     types: [opened, synchronize, reopened]
   #     paths:
-  #       - 'web/**'
+  #       - 'apps/**'
+  #       - 'packages/**'
+  #       - 'e2e/**'
+  #       - 'package.json'
+  #       - 'package-lock.json'
+  #       - 'vercel.json'
   #       - '.github/workflows/vercel-preview.yml'
   workflow_dispatch:
 
@@ -37,30 +47,35 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    defaults:
-      run:
-        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
+      # No working-directory. This is an npm workspace and every script lives at
+      # the root, where it reaches across apps/ and packages/ at once.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      # The same three gates named in CLAUDE.md, ahead of the deploy rather
-      # than after it, so a broken typecheck or a failing test never reaches a
-      # preview URL someone might be shown.
-      - name: Typecheck
-        run: npx tsc -p tsconfig.app.json --noEmit
+      # The same gates named in CLAUDE.md, ahead of the deploy rather than after
+      # it, so a broken typecheck or a failing test never reaches a preview URL
+      # someone might be shown.
+      - name: Verify
+        run: npm run verify
 
-      - name: Test
-        run: npx vitest run
+      # Only the one browser the suite actually uses. Both Playwright projects
+      # are Chromium, one at a desktop viewport and one emulating a Pixel 7.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # Runs after Verify because it serves the dist/ that Verify just built.
+      - name: End to end
+        run: npm run e2e
 
       # Pinned to a major. `@latest` would let a CLI release change the
       # behaviour of a deploy with no commit to point at.
