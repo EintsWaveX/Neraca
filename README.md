@@ -5,7 +5,7 @@ console program it grew out of.**
 
 | Build | Where | What it is |
 |---|---|---|
-| **Neraca** | [neraca.vercel.app](https://neraca.vercel.app/) | React and TypeScript, runs entirely in the browser, no server |
+| **Neraca** | [neraca-ledger.vercel.app](https://neraca-ledger.vercel.app/) | React and TypeScript, runs entirely in the browser, no server |
 | **FinancialAM** | `cli/` | The original, 8,101 lines of C using only the standard library plus Win32, with a POSIX variant of 8,119 beside it |
 
 Both are maintained. The console version is the lightweight build, not an
@@ -85,7 +85,7 @@ npm run lint          # Oxlint, not a release gate
 fails the deploy rather than reaching the live site. It covers 201 unit tests
 over the domain rules and the storage layer.
 
-`npm run e2e` adds 41 Playwright tests across a desktop viewport and a Pixel 7,
+`npm run e2e` adds 42 Playwright tests across a desktop viewport and a Pixel 7,
 run against `vite preview` rather than the dev server: the dev server injects
 its HMR client and its styles inline, which the production Content Security
 Policy correctly forbids, so a suite pointed at dev would pass while the real

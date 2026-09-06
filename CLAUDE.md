@@ -41,7 +41,7 @@ is wrong should say so and wait, not act.
    roles I am applying for actually use. TypeScript is not decoration here: the
    app does money arithmetic across currencies, and the types are load bearing.
 3. **Its own repository, its own deployment.** Deployed to Vercel at
-   `neraca.vercel.app`, not folded into the portfolio repository. This
+   `neraca-ledger.vercel.app`, not folded into the portfolio repository. This
    started on GitHub Pages and moved once the app wanted things a repository
    subpath makes awkward: a root `base`, so the service worker scope and the
    manifest `start_url` are the whole origin rather than a folder inside it,
@@ -106,6 +106,12 @@ interesting part:
   announcing them, so a screen reader was told about a control no thumb could
   reach. Found by running the end to end suite at a phone viewport, which is
   the argument for having one: every unit test and the type checker were green.
+- The live site named in this file and in the readme did not exist. Both
+  claimed `financial-am.vercel.app`, which answers `DEPLOYMENT_NOT_FOUND`:
+  there was no Vercel project for this app at all, so every statement about
+  what the deploy gate protected was describing something that had never run.
+  Found by checking the URL rather than by reading the configuration that
+  pointed at it, which is the same lesson as the two below.
 - The same suite found the register rendering 536px wide inside a 412px phone.
   The folded rows become grids, but the table around them is still a table box
   and still sizes to its own content, so the intrinsic width of the widest row
