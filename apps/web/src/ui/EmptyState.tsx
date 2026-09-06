@@ -13,16 +13,16 @@ export interface EmptyStateProps {
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center gap-3 rounded-card border border-dashed border-line px-6 py-12 text-center ${className ?? ''}`}
+      className={`flex flex-col items-center gap-3 border-y border-rule px-6 py-12 text-center ${className ?? ''}`}
     >
       {icon && (
-        <div aria-hidden="true" className="text-faint [&>svg]:h-10 [&>svg]:w-10">
+        <div aria-hidden="true" className="text-ink-faint [&>svg]:h-10 [&>svg]:w-10">
           {icon}
         </div>
       )}
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-semibold text-text">{title}</p>
-        {description && <p className="max-w-sm text-sm text-muted">{description}</p>}
+        <p className="text-ink">{title}</p>
+        {description && <p className="max-w-sm text-sm text-ink-muted">{description}</p>}
       </div>
       {action && <div className="mt-1">{action}</div>}
     </div>

@@ -11,15 +11,14 @@
 
 import { useMemo, useState } from 'react'
 import type { Wallet } from '@neraca/domain/types'
-import { formatMoney } from '@neraca/domain/money'
 import { netWorth, walletBalance } from '@neraca/domain/balances'
 import { useRepository, useAsync } from '@/app/repo'
 import { useProfile } from '@/app/ProfileProvider'
 import { useI18n } from '@/i18n'
-import {
-  Badge, Button, Card, CardBody, CardHeader, CardTitle, EmptyState, Modal, Skeleton,
-  staggerStyle, Table, TBody, TD, TH, THead, TR,
-} from '@/ui'
+import { Badge, Button, EmptyState, Modal, Skeleton } from '@/ui'
+import { Block, Hero, Page } from '@/design/primitives'
+import { MoneyFigure } from '@/design/Figure'
+import { LedgerTable, type LedgerColumn } from '@/design/LedgerTable'
 import { WalletForm } from './WalletForm'
 
 export default function WalletsPage() {
@@ -114,88 +113,102 @@ export default function WalletsPage() {
     }
   }
 
+  const columns: ReadonlyArray<LedgerColumn<Wallet>> = [
+    {
+      key: 'name',
+      header: t.wallet.fields.name,
+      area: 'desc',
+      render: (wallet) => (
+        <span className="flex min-w-0 flex-col">
+          <span className="flex items-center gap-2">
+            <span className="truncate text-ink">{wallet.name}</span>
+            {wallet.archived && <Badge tone="neutral">{t.wallet.archived}</Badge>}
+          </span>
+          <span className="text-xs text-ink-faint">
+            {t.wallet.kinds[wallet.kind]} · {wallet.currency}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'balance',
+      // No currency in the heading: every wallet holds its own, which is why
+      // these figures keep their symbols where a single currency column drops
+      // them.
+      header: t.wallet.balanceLabel,
+      area: 'amount',
+      align: 'right',
+      render: (wallet) => {
+        const balance = walletBalance(wallet, txList)
+        return <MoneyFigure value={balance} tone={balance.minor < 0 ? 'debit' : 'neutral'} />
+      },
+    },
+    {
+      key: 'actions',
+      header: <span className="sr-only">{t.common.edit}</span>,
+      area: 'balance',
+      align: 'right',
+      render: (wallet) => (
+        <span className="flex flex-wrap justify-end gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setEditing(wallet)}>
+            {t.common.edit}
+          </Button>
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => toggleArchive(wallet)}>
+            {wallet.archived ? t.wallet.unarchive : t.wallet.archive}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleDeleteClick(wallet)}>
+            {t.common.delete}
+          </Button>
+        </span>
+      ),
+    },
+  ]
+
   return (
-    <div className="flex flex-col gap-4">
+    <Page>
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-text">{t.wallet.title}</h1>
+        <h1 className="text-h2 leading-tight">{t.wallet.title}</h1>
         <Button onClick={() => setEditing('new')}>{t.wallet.add}</Button>
       </header>
 
-      <Card className="animate-fade-in">
-        <CardHeader className="flex-wrap">
-          <CardTitle>{t.wallet.totalBalance}</CardTitle>
-          {total ? (
-            <span className="tnum text-sm font-semibold text-text">{formatMoney(total)}</span>
-          ) : (
-            !loading && <span className="text-xs text-muted">{t.empty.exchangeRates}</span>
-          )}
-        </CardHeader>
-        <CardBody className="flex flex-col gap-4">
-          <label className="flex w-fit items-center gap-2 text-sm text-text">
+      <div className="mt-8">
+        <Hero
+          label={t.wallet.totalBalance}
+          value={total ? <MoneyFigure value={total} display /> : '-'}
+          {...(!total && !loading ? { meta: t.empty.exchangeRates } : {})}
+        />
+      </div>
+
+      <Block
+        title={t.wallet.title}
+        action={
+          <label className="flex items-center gap-2 text-sm text-ink-muted">
             <input
               type="checkbox"
               checked={showArchived}
               onChange={(event) => setShowArchived(event.target.checked)}
-              className="h-4 w-4 rounded border-line accent-[var(--color-accent)]"
+              className="h-4 w-4 accent-[var(--indigo)]"
             />
             {t.wallet.archived}
           </label>
-
-          {loading ? (
-            <div className="flex flex-col gap-2">
-              <Skeleton shape="block" className="h-10 w-full" />
-              <Skeleton shape="block" className="h-10 w-full" />
-            </div>
-          ) : visibleWallets.length === 0 ? (
-            <EmptyState title={t.empty.wallets} />
-          ) : (
-            <Table>
-              <THead>
-                <TR>
-                  <TH>{t.wallet.fields.name}</TH>
-                  <TH>{t.wallet.fields.kind}</TH>
-                  <TH>{t.wallet.fields.currency}</TH>
-                  <TH>{t.wallet.balanceLabel}</TH>
-                  <TH aria-label={t.common.edit} />
-                </TR>
-              </THead>
-              <TBody>
-                {visibleWallets.map((wallet, index) => {
-                  const balance = walletBalance(wallet, txList)
-                  return (
-                    <TR key={wallet.id} className="animate-rise-in" style={staggerStyle(index)}>
-                      <TD>
-                        <div className="flex items-center gap-2">
-                          <span>{wallet.name}</span>
-                          {wallet.archived && <Badge tone="neutral">{t.wallet.archived}</Badge>}
-                        </div>
-                      </TD>
-                      <TD>{t.wallet.kinds[wallet.kind]}</TD>
-                      <TD>{wallet.currency}</TD>
-                      <TD numeric className={balance.minor < 0 ? 'text-negative' : 'text-text'}>
-                        {formatMoney(balance)}
-                      </TD>
-                      <TD>
-                        <div className="flex flex-wrap justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setEditing(wallet)}>
-                            {t.common.edit}
-                          </Button>
-                          <Button size="sm" variant="ghost" disabled={busy} onClick={() => toggleArchive(wallet)}>
-                            {wallet.archived ? t.wallet.unarchive : t.wallet.archive}
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteClick(wallet)}>
-                            {t.common.delete}
-                          </Button>
-                        </div>
-                      </TD>
-                    </TR>
-                  )
-                })}
-              </TBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+        }
+      >
+        {loading ? (
+          <div className="flex flex-col gap-2 py-2" aria-hidden="true">
+            <Skeleton shape="block" className="h-10 w-full" />
+            <Skeleton shape="block" className="h-10 w-full" />
+          </div>
+        ) : visibleWallets.length === 0 ? (
+          <EmptyState title={t.empty.wallets} />
+        ) : (
+          <LedgerTable
+            caption={t.wallet.title}
+            columns={columns}
+            rows={visibleWallets}
+            rowKey={(wallet) => wallet.id}
+          />
+        )}
+      </Block>
 
       <Modal
         open={editing !== null}
@@ -254,6 +267,6 @@ export default function WalletsPage() {
           {blockedTarget ? t('wallet.deleteConfirm', { name: blockedTarget.name }) : ''}
         </p>
       </Modal>
-    </div>
+    </Page>
   )
 }

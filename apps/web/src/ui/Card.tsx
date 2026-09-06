@@ -6,12 +6,19 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   interactive?: boolean
 }
 
-/** The card surface itself. Uses the shared --radius-card and --shadow-card tokens so every card in every app matches. */
+/**
+ * A genuinely contained group, such as a panel of settings controls.
+ *
+ * No shadow. In the Passbook system a shadow means the thing is floating
+ * above the page, which is true of a dialog and of nothing else, so a panel
+ * is marked by its rule and its ground rather than by being lifted off the
+ * paper. Lists of records are not cards at all: they are ruled rows.
+ */
 export function Card({ interactive, className, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-card border border-line bg-surface shadow-[var(--shadow-card)]",
+        "rounded-sheet border border-rule bg-paper-raised",
         interactive && "card-interactive",
         className
       )}
@@ -25,7 +32,7 @@ export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
 export function CardHeader({ className, ...props }: CardHeaderProps) {
   return (
     <div
-      className={cn("flex items-center justify-between gap-3 border-b border-line px-5 py-4", className)}
+      className={cn("flex items-center justify-between gap-3 border-b border-rule px-5 py-3", className)}
       {...props}
     />
   )
@@ -34,7 +41,7 @@ export function CardHeader({ className, ...props }: CardHeaderProps) {
 export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
 
 export function CardTitle({ className, ...props }: CardTitleProps) {
-  return <h3 className={cn("text-sm font-semibold text-text", className)} {...props} />
+  return <h3 className={cn("text-h3 leading-snug text-ink", className)} {...props} />
 }
 
 export interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {}
@@ -48,7 +55,7 @@ export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
 export function CardFooter({ className, ...props }: CardFooterProps) {
   return (
     <div
-      className={cn("flex items-center justify-end gap-2 border-t border-line px-5 py-4", className)}
+      className={cn("flex items-center justify-end gap-2 border-t border-rule px-5 py-3", className)}
       {...props}
     />
   )

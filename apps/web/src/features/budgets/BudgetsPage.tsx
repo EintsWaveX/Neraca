@@ -12,21 +12,29 @@ import type { Budget, BudgetPeriod } from '@neraca/domain/types'
 import { activeAlerts, budgetPeriodRange, evaluateBudget, type BudgetStatus } from '@neraca/domain/budget'
 import { abs, formatMoney } from '@neraca/domain/money'
 import { categoryById } from '@neraca/domain/categories'
-import {
-  Badge, Button, Card, CardBody, EmptyState, Modal, ProgressBar, Skeleton, staggerStyle, Tabs,
-} from '@/ui'
+import { Badge, Button, EmptyState, Modal, ProgressBar, Skeleton, Tabs } from '@/ui'
+import { Block, Page, RuledRow } from '@/design/primitives'
+import { MoneyFigure } from '@/design/Figure'
 import { BudgetForm, defaultPeriodKeyFor, PeriodKeyField } from './BudgetForm'
 
 const STATE_BAR_CLASS: Record<BudgetStatus['state'], string> = {
-  under: 'bg-positive',
-  approaching: 'bg-warning',
-  over: 'bg-negative',
+  under: 'bg-credit',
+  approaching: 'bg-stamp',
+  over: 'bg-debit',
 }
 
 const STATE_TEXT_CLASS: Record<BudgetStatus['state'], string> = {
-  under: 'text-positive',
-  approaching: 'text-warning',
-  over: 'text-negative',
+  under: 'text-credit',
+  approaching: 'text-stamp',
+  over: 'text-debit',
+}
+
+/* The margin rule on an alert note. Filled panels in two alarm colours were
+   the loudest thing on a screen whose own rows already say the same thing. */
+const STATE_RULE_CLASS: Record<BudgetStatus['state'], string> = {
+  under: 'border-credit',
+  approaching: 'border-stamp',
+  over: 'border-debit',
 }
 
 /** 0 to 100, and never Infinity or NaN even when a budget carries a zero limit. */
@@ -116,28 +124,29 @@ export default function BudgetsPage() {
   const loading = budgetsAsync.loading || transactionsAsync.loading
 
   return (
-    <div className="flex flex-col gap-5 pb-8">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-text">{t.budget.title}</h1>
-        <Button size="sm" onClick={openCreate}>
-          {t.budget.add}
-        </Button>
-      </div>
+    <Page>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-h2 leading-tight">{t.budget.title}</h1>
+        <Button onClick={openCreate}>{t.budget.add}</Button>
+      </header>
 
+      {/*
+        Alerts stay on this screen even though every row below carries its own
+        state, because a budget can be over in a period you are not currently
+        looking at. They are marginal notes against a coloured rule rather than
+        filled panels: two alarm colours in solid blocks were the loudest thing
+        on the page, sitting above the figures they were warning about.
+      */}
       {alerts.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="mt-6">
           {alerts.map((status, index) => (
             <div
               key={status.budget.id}
-              className={`animate-rise-in flex items-center justify-between gap-3 rounded-control border px-3 py-2 text-sm ${
-                status.state === 'over'
-                  ? 'border-negative/30 bg-negative-soft text-negative'
-                  : 'border-warning/30 bg-warning-soft text-warning'
-              }`}
-              style={staggerStyle(index)}
+              className={`print-in flex flex-wrap items-baseline justify-between gap-2 border-l-2 py-1.5 pl-3 text-sm ${STATE_RULE_CLASS[status.state]}`}
+              style={{ '--print-index': index } as React.CSSProperties}
             >
-              <span className="font-medium">{categoryLabel(status.budget.categoryId)}</span>
-              <span>
+              <span className="text-ink">{categoryLabel(status.budget.categoryId)}</span>
+              <span className={STATE_TEXT_CLASS[status.state]}>
                 {status.state === 'over'
                   ? t('budget.overLimit', { amount: formatMoney(abs(status.remaining)) })
                   : t.budget.nearLimit}
@@ -147,7 +156,7 @@ export default function BudgetsPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <Tabs
           label={t.budget.fields.period}
           value={period}
@@ -171,39 +180,67 @@ export default function BudgetsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton shape="block" className="h-28 w-full" />
-          <Skeleton shape="block" className="h-28 w-full" />
-        </div>
-      ) : periodBudgets.length === 0 ? (
-        <EmptyState
-          title={t.empty.budgets}
-          action={
-            <Button size="sm" onClick={openCreate}>
-              {t.budget.add}
-            </Button>
-          }
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {statuses.map((status, index) => {
+      <Block title={periodKey}>
+        {loading ? (
+          <div className="flex flex-col gap-3 py-2" aria-hidden="true">
+            <Skeleton shape="block" className="h-16 w-full" />
+            <Skeleton shape="block" className="h-16 w-full" />
+          </div>
+        ) : periodBudgets.length === 0 ? (
+          <EmptyState
+            title={t.empty.budgets}
+            action={
+              <Button size="sm" onClick={openCreate}>
+                {t.budget.add}
+              </Button>
+            }
+          />
+        ) : (
+          statuses.map((status, index) => {
             const percent = clampedPercent(status.fraction)
             const label = categoryLabel(status.budget.categoryId)
             return (
-              <Card key={status.budget.id} interactive className="animate-rise-in" style={staggerStyle(index)}>
-                <CardBody className="flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold text-text">{label}</span>
-                      {status.budget.description && (
-                        <span className="text-xs text-muted">{status.budget.description}</span>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Badge tone={status.state === 'under' ? 'positive' : status.state === 'approaching' ? 'warning' : 'negative'}>
-                        {percent}%
-                      </Badge>
+              <RuledRow
+                key={status.budget.id}
+                index={index}
+                label={label}
+                {...(status.budget.description ? { note: status.budget.description } : {})}
+                value={
+                  <span className="flex items-baseline gap-2 text-sm">
+                    <MoneyFigure
+                      value={status.spent}
+                      tone={status.state === 'over' ? 'debit' : 'neutral'}
+                      showSymbol={false}
+                    />
+                    <span className="text-ink-faint">/</span>
+                    <MoneyFigure value={status.limit} className="text-ink-muted" showSymbol={false} />
+                    <Badge
+                      tone={
+                        status.state === 'under'
+                          ? 'positive'
+                          : status.state === 'approaching'
+                            ? 'warning'
+                            : 'negative'
+                      }
+                    >
+                      {percent}%
+                    </Badge>
+                  </span>
+                }
+                below={
+                  <div className="flex flex-wrap items-center gap-3">
+                    <ProgressBar
+                      value={percent}
+                      label={label}
+                      barClassName={STATE_BAR_CLASS[status.state]}
+                      className="min-w-32 flex-1"
+                    />
+                    <span className={`shrink-0 text-xs ${STATE_TEXT_CLASS[status.state]}`}>
+                      {status.state === 'over'
+                        ? t('budget.overLimit', { amount: formatMoney(abs(status.remaining)) })
+                        : t('budget.remaining', { amount: formatMoney(status.remaining) })}
+                    </span>
+                    <span className="flex shrink-0 gap-1">
                       <IconButton
                         label={`${t.common.edit}: ${label}`}
                         onClick={() => openEdit(status.budget)}
@@ -216,34 +253,14 @@ export default function BudgetsPage() {
                       >
                         <TrashIcon />
                       </IconButton>
-                    </div>
-                  </div>
-
-                  <ProgressBar value={percent} label={label} barClassName={STATE_BAR_CLASS[status.state]} />
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="text-muted tnum">
-                      {t('budget.spentOfLimit', {
-                        spent: formatMoney(status.spent),
-                        limit: formatMoney(status.limit),
-                      })}
-                    </span>
-                    <span className={`tnum font-medium ${STATE_TEXT_CLASS[status.state]}`}>
-                      {status.state === 'over'
-                        ? t('budget.overLimit', { amount: formatMoney(abs(status.remaining)) })
-                        : t('budget.remaining', { amount: formatMoney(status.remaining) })}
                     </span>
                   </div>
-
-                  {status.state === 'approaching' && (
-                    <p className="text-xs text-warning">{t.budget.nearLimit}</p>
-                  )}
-                </CardBody>
-              </Card>
+                }
+              />
             )
-          })}
-        </div>
-      )}
+          })
+        )}
+      </Block>
 
       <Modal
         open={formOpen}
@@ -282,9 +299,9 @@ export default function BudgetsPage() {
           </>
         }
       >
-        <p className="text-sm text-muted">{t.budget.deleteConfirm}</p>
+        <p className="text-sm text-ink-muted">{t.budget.deleteConfirm}</p>
       </Modal>
-    </div>
+    </Page>
   )
 }
 

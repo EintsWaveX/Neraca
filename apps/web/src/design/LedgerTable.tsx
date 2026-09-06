@@ -21,6 +21,8 @@
 
 import type { ReactNode } from 'react'
 
+export type SortDirection = 'ascending' | 'descending' | 'none'
+
 /** Where a column sits once a row folds onto two lines on a narrow screen. */
 export type LedgerArea = 'date' | 'desc' | 'amount' | 'balance'
 
@@ -32,6 +34,14 @@ export interface LedgerColumn<T> {
   /** Applied to both the header cell and every body cell in the column. */
   className?: string
   render: (row: T, index: number) => ReactNode
+  /**
+   * A sortable column's heading becomes a button. The clickable surface is
+   * the button rather than the whole cell, so a reader tabbing through the
+   * table lands on something that announces itself as pressable.
+   */
+  sortable?: boolean
+  sortDirection?: SortDirection
+  onSort?: () => void
 }
 
 export interface LedgerTableProps<T> {
@@ -61,6 +71,18 @@ const AREA_CLASS: Record<LedgerArea, string> = {
   balance: 'c-balance',
 }
 
+/* Two small carets rather than one that flips, so an unsorted column still
+   shows where sorting would take it. The active direction is full strength and
+   the other is faint, which reads at a glance without needing a legend. */
+function SortMark({ direction }: { direction: SortDirection }) {
+  return (
+    <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 shrink-0">
+      <path d="M6 2l3 3.5H3L6 2z" fill="currentColor" opacity={direction === 'ascending' ? 1 : 0.3} />
+      <path d="M6 10l-3-3.5h6L6 10z" fill="currentColor" opacity={direction === 'descending' ? 1 : 0.3} />
+    </svg>
+  )
+}
+
 export function LedgerTable<T>({
   caption,
   columns,
@@ -79,6 +101,7 @@ export function LedgerTable<T>({
             <th
               key={col.key}
               scope="col"
+              aria-sort={col.sortable ? (col.sortDirection ?? 'none') : undefined}
               className={[
                 'pb-2 text-sm font-normal text-ink-muted',
                 col.align === 'right' ? 'text-right' : '',
@@ -87,7 +110,18 @@ export function LedgerTable<T>({
                 .filter(Boolean)
                 .join(' ')}
             >
-              {col.header}
+              {col.sortable ? (
+                <button
+                  type="button"
+                  onClick={col.onSort}
+                  className="inline-flex items-center gap-1 text-ink-muted transition-colors duration-[--dur-fast] hover:text-ink"
+                >
+                  {col.header}
+                  <SortMark direction={col.sortDirection ?? 'none'} />
+                </button>
+              ) : (
+                col.header
+              )}
             </th>
           ))}
         </tr>

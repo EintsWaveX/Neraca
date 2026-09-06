@@ -16,7 +16,8 @@ import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths } f
 import { useI18n } from '@/i18n'
 import { useProfile } from '@/app/ProfileProvider'
 import { useAsync, useRepository } from '@/app/repo'
-import { Card, CardBody, CardHeader, CardTitle, EmptyState, Input, Select, Skeleton, staggerStyle } from '@/ui'
+import { EmptyState, Input, Select, Skeleton } from '@/ui'
+import { Block, Page } from '@/design/primitives'
 import {
   budgetBurndown, categoryBreakdown, incomeVsExpense, spendingOverTime, type Granularity,
 } from '@neraca/domain/reports'
@@ -153,174 +154,165 @@ export default function ReportsPage() {
   const hasAnyData = (transactions?.length ?? 0) > 0
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6">
-      <h1 className="text-lg font-semibold text-text">{t.report.title}</h1>
+    <Page>
+      <h1 className="text-h2 leading-tight">{t.report.title}</h1>
 
-      <Card>
-        <CardBody className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="w-full sm:w-56">
-            <Select
-              label={t.report.dateRange}
-              value={preset}
-              onChange={(event) => setPreset(event.target.value as RangePreset)}
-            >
-              {RANGE_PRESETS.map((option) => (
-                <option key={option} value={option}>{rangeLabel(option)}</option>
-              ))}
-            </Select>
-          </div>
+      {/*
+        The range controls sit on the page rather than in a panel of their own.
+        A bordered box around three selects is a box drawn to hold a box.
+      */}
+      <div className="mt-6 flex flex-wrap items-end gap-4 border-b border-rule pb-6">
+        <div className="w-full sm:w-56">
+          <Select
+            label={t.report.dateRange}
+            value={preset}
+            onChange={(event) => setPreset(event.target.value as RangePreset)}
+          >
+            {RANGE_PRESETS.map((option) => (
+              <option key={option} value={option}>{rangeLabel(option)}</option>
+            ))}
+          </Select>
+        </div>
 
-          {preset === 'custom' && (
-            <>
-              <div className="w-full sm:w-44">
-                <Input
-                  type="date"
-                  label={t.common.from}
-                  value={customFrom}
-                  max={customTo}
-                  onChange={(event) => setCustomFrom(event.target.value)}
-                />
-              </div>
-              <div className="w-full sm:w-44">
-                <Input
-                  type="date"
-                  label={t.common.to}
-                  value={customTo}
-                  min={customFrom}
-                  onChange={(event) => setCustomTo(event.target.value)}
-                />
-              </div>
-            </>
-          )}
-
-          <div className="w-full sm:w-40">
-            <Select
-              label={t.budget.fields.period}
-              value={granularity}
-              onChange={(event) => setGranularity(event.target.value as Granularity)}
-            >
-              {GRANULARITIES.map((option) => (
-                <option key={option} value={option}>{granularityLabel(option)}</option>
-              ))}
-            </Select>
-          </div>
-        </CardBody>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {loading ? (
+        {preset === 'custom' && (
           <>
-            <Skeleton shape="block" className="h-72 w-full" />
-            <Skeleton shape="block" className="h-72 w-full" />
-            <Skeleton shape="block" className="h-72 w-full" />
-          </>
-        ) : !hasAnyData ? (
-          <div className="lg:col-span-2">
-            <EmptyState title={t.report.noData} description={t.empty.reportsData} />
-          </div>
-        ) : (
-          <>
-            <Card className="animate-rise-in" style={staggerStyle(0)}>
-              <CardHeader>
-                <CardTitle>{t.report.spendingOverTime}</CardTitle>
-              </CardHeader>
-              <CardBody>
-                {spendingPoints.length === 0 ? (
-                  <EmptyState title={t.report.noData} />
-                ) : (
-                  <SpendingOverTimeChart
-                    points={spendingPoints}
-                    currency={profile.baseCurrency}
-                    granularity={granularity}
-                    locale={locale}
-                    t={t}
-                  />
-                )}
-              </CardBody>
-            </Card>
-
-            <Card className="animate-rise-in" style={staggerStyle(1)}>
-              <CardHeader>
-                <CardTitle>{t.report.categoryBreakdown}</CardTitle>
-              </CardHeader>
-              <CardBody>
-                {categoryTotals.length === 0 ? (
-                  <EmptyState title={t.report.noData} />
-                ) : (
-                  <CategoryBreakdownChart
-                    totals={categoryTotals}
-                    currency={profile.baseCurrency}
-                    locale={locale}
-                    t={t}
-                  />
-                )}
-              </CardBody>
-            </Card>
-
-            <Card className="animate-rise-in" style={staggerStyle(2)}>
-              <CardHeader>
-                <CardTitle>{t.report.incomeVsExpense}</CardTitle>
-              </CardHeader>
-              <CardBody>
-                {incomeExpensePoints.length === 0 ? (
-                  <EmptyState title={t.report.noData} />
-                ) : (
-                  <IncomeExpenseChart
-                    points={incomeExpensePoints}
-                    currency={profile.baseCurrency}
-                    granularity={granularity}
-                    locale={locale}
-                    t={t}
-                  />
-                )}
-              </CardBody>
-            </Card>
+            <div className="w-full sm:w-44">
+              <Input
+                type="date"
+                label={t.common.from}
+                value={customFrom}
+                max={customTo}
+                onChange={(event) => setCustomFrom(event.target.value)}
+              />
+            </div>
+            <div className="w-full sm:w-44">
+              <Input
+                type="date"
+                label={t.common.to}
+                value={customTo}
+                min={customFrom}
+                onChange={(event) => setCustomTo(event.target.value)}
+              />
+            </div>
           </>
         )}
 
-        {/*
-          Independent of the range and loading state above: the burn down
-          tracks a budget's own period, chosen from its own selector, not the
-          date range control at the top of the page. Hiding it behind
-          hasAnyData would make a budget with real spending disappear just
-          because the unrelated top level range happens to be empty.
-        */}
-        <Card className="animate-rise-in" style={staggerStyle(3)}>
-          <CardHeader className="flex-wrap gap-y-3">
-            <CardTitle>{t.report.budgetBurnDown}</CardTitle>
-            {budgets && budgets.length > 0 && (
-              <div className="w-full sm:w-64">
-                <Select
-                  label={t.budget.title}
-                  value={selectedBudgetId ?? ''}
-                  onChange={(event) => setBudgetIdOverride(event.target.value)}
-                  className="text-xs"
-                >
-                  {budgets.map((b) => (
-                    <option key={b.id} value={b.id}>{budgetLabel(b)}</option>
-                  ))}
-                </Select>
-              </div>
+        <div className="w-full sm:w-40">
+          <Select
+            label={t.budget.fields.period}
+            value={granularity}
+            onChange={(event) => setGranularity(event.target.value as Granularity)}
+          >
+            {GRANULARITIES.map((option) => (
+              <option key={option} value={option}>{granularityLabel(option)}</option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      {/*
+        Charts are stacked full width rather than paired in a grid. Two charts
+        per row made every row as tall as its taller half, which left the
+        spending columns floating in a third of a screen of empty card, and it
+        halved the width of the axis a reader is trying to follow.
+      */}
+      {loading ? (
+        <div className="mt-10 flex flex-col gap-8" aria-hidden="true">
+          <Skeleton shape="block" className="h-64 w-full" />
+          <Skeleton shape="block" className="h-64 w-full" />
+        </div>
+      ) : !hasAnyData ? (
+        <div className="mt-10">
+          <EmptyState title={t.report.noData} description={t.empty.reportsData} />
+        </div>
+      ) : (
+        <>
+          <Block title={t.report.spendingOverTime}>
+            {spendingPoints.length === 0 ? (
+              <EmptyState title={t.report.noData} />
+            ) : (
+              <SpendingOverTimeChart
+                points={spendingPoints}
+                currency={profile.baseCurrency}
+                granularity={granularity}
+                locale={locale}
+                t={t}
+              />
             )}
-          </CardHeader>
-          <CardBody>
-            {budgetsLoading || budgetTxLoading ? (
-              <Skeleton shape="block" className="h-64 w-full" />
-            ) : !budgets || budgets.length === 0 ? (
-              <EmptyState title={t.empty.budgets} />
-            ) : selectedBudget && burndownPoints.length > 0 ? (
-              <BudgetBurndownChart
-                points={burndownPoints}
+          </Block>
+
+          <Block title={t.report.categoryBreakdown}>
+            {categoryTotals.length === 0 ? (
+              <EmptyState title={t.report.noData} />
+            ) : (
+              <CategoryBreakdownChart
+                totals={categoryTotals}
                 currency={profile.baseCurrency}
                 locale={locale}
                 t={t}
               />
-            ) : (
-              <EmptyState title={t.report.noData} />
             )}
-          </CardBody>
-        </Card>
-      </div>
-    </div>
+          </Block>
+
+          <Block title={t.report.incomeVsExpense}>
+            {incomeExpensePoints.length === 0 ? (
+              <EmptyState title={t.report.noData} />
+            ) : (
+              <IncomeExpenseChart
+                points={incomeExpensePoints}
+                currency={profile.baseCurrency}
+                granularity={granularity}
+                locale={locale}
+                t={t}
+              />
+            )}
+          </Block>
+        </>
+      )}
+
+      {/*
+        Independent of the range and loading state above: the burn down tracks
+        a budget's own period, chosen from its own selector, not the date range
+        control at the top of the page. Hiding it behind hasAnyData would make
+        a budget with real spending disappear just because the unrelated top
+        level range happens to be empty.
+      */}
+      <Block
+        title={t.report.budgetBurnDown}
+        {...(budgets && budgets.length > 0
+          ? {
+              action: (
+                <div className="w-56">
+                  <Select
+                    label={t.budget.title}
+                    value={selectedBudgetId ?? ''}
+                    onChange={(event) => setBudgetIdOverride(event.target.value)}
+                    className="text-xs"
+                  >
+                    {budgets.map((b) => (
+                      <option key={b.id} value={b.id}>{budgetLabel(b)}</option>
+                    ))}
+                  </Select>
+                </div>
+              ),
+            }
+          : {})}
+      >
+        {budgetsLoading || budgetTxLoading ? (
+          <Skeleton shape="block" className="h-56 w-full" />
+        ) : !budgets || budgets.length === 0 ? (
+          <EmptyState title={t.empty.budgets} />
+        ) : selectedBudget && burndownPoints.length > 0 ? (
+          <BudgetBurndownChart
+            points={burndownPoints}
+            currency={profile.baseCurrency}
+            locale={locale}
+            t={t}
+          />
+        ) : (
+          <EmptyState title={t.report.noData} />
+        )}
+      </Block>
+    </Page>
   )
 }

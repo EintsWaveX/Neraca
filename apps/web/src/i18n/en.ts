@@ -129,8 +129,6 @@ export const en = {
     archived: 'Archived',
     balanceLabel: 'Current balance',
     totalBalance: 'Total balance',
-    /** One wallet's own balance, in that wallet's own currency. */
-    balance: 'Balance',
   },
 
   transaction: {

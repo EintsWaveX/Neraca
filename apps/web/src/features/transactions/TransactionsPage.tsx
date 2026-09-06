@@ -5,26 +5,31 @@
  * and `countTransactions` rather than being done in the browser against a
  * full local copy, so the page stays responsive no matter how many rows a
  * profile has built up. The one exception is the running total footer: there
- * is no server-side sum in `Repository`, so totalling the filtered set means
+ * is no server side sum in `Repository`, so totalling the filtered set means
  * fetching every matching row once, unpaginated, purely to add it up. That is
  * still driven entirely by the query filters, never by re-filtering in the
  * browser.
+ *
+ * The register is the screen this whole design is named after, so it is the
+ * plainest one: a heading, the filters, and the ledger. The running total sits
+ * in the table's own footer under the heavier rule, where a ledger puts a sum,
+ * rather than floating in a card header away from the column it totals.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import type { Transaction } from '@neraca/domain/types'
 import type { TransactionQuery } from '@/data/repository'
-import { add, formatMoney, negate, zero, money, type Money } from '@neraca/domain/money'
+import { add, negate, zero, money, type Money } from '@neraca/domain/money'
 import { signedBase } from '@neraca/domain/rates'
 import { categoryById } from '@neraca/domain/categories'
 import { transactionTypeById } from '@neraca/domain/txTypes'
 import { useRepository, useAsync } from '@/app/repo'
 import { useProfile } from '@/app/ProfileProvider'
 import { useI18n } from '@/i18n'
-import {
-  Button, Card, CardBody, CardHeader, CardTitle, EmptyState, Modal, Skeleton,
-  staggerStyle, Table, TBody, TD, TH, THead, TR, type SortDirection,
-} from '@/ui'
+import { Button, EmptyState, Modal, Skeleton } from '@/ui'
+import { Block, Page } from '@/design/primitives'
+import { Figure, MoneyFigure } from '@/design/Figure'
+import { LedgerTable, type LedgerColumn, type SortDirection } from '@/design/LedgerTable'
 import {
   FilterPanel, buildTransactionQuery, createEmptyFilters, filtersAreDefault,
   type TransactionFiltersState,
@@ -40,16 +45,14 @@ function nextSortFor(current: Sort, column: 'date' | 'amount'): Sort {
   return current === 'amount-desc' ? 'amount-asc' : 'amount-desc'
 }
 
-/** The transaction's own amount, signed by direction, in its own currency (not converted). A transfer shows plain, with no sign. */
+/**
+ * The transaction's own amount, signed by direction, in its own currency and
+ * not converted. A transfer shows plain, with no sign, because it did not add
+ * to or subtract from anything overall.
+ */
 function rowAmount(tx: Transaction): Money {
   const amt = money(tx.amount, tx.currency)
   return tx.direction === 'expense' ? negate(amt) : amt
-}
-
-function rowAmountClass(tx: Transaction): string {
-  if (tx.direction === 'income') return 'text-positive'
-  if (tx.direction === 'expense') return 'text-negative'
-  return 'text-muted'
 }
 
 export default function TransactionsPage() {
@@ -104,7 +107,10 @@ export default function TransactionsPage() {
 
   const runningTotal = useMemo(() => {
     if (!totals.data) return null
-    return totals.data.reduce((acc, tx) => add(acc, signedBase(tx, profile.baseCurrency)), zero(profile.baseCurrency))
+    return totals.data.reduce(
+      (acc, tx) => add(acc, signedBase(tx, profile.baseCurrency)),
+      zero(profile.baseCurrency),
+    )
   }, [totals.data, profile.baseCurrency])
 
   function reload() {
@@ -123,129 +129,154 @@ export default function TransactionsPage() {
     }
   }
 
-  const dateSortDir: SortDirection = sort === 'date-desc' ? 'descending' : sort === 'date-asc' ? 'ascending' : 'none'
+  const dateSortDir: SortDirection =
+    sort === 'date-desc' ? 'descending' : sort === 'date-asc' ? 'ascending' : 'none'
   const amountSortDir: SortDirection =
     sort === 'amount-desc' ? 'descending' : sort === 'amount-asc' ? 'ascending' : 'none'
 
   const loading = list.loading || wallets.loading
 
+  const columns: ReadonlyArray<LedgerColumn<Transaction>> = [
+    {
+      key: 'date',
+      header: t.transaction.fields.date,
+      area: 'date',
+      sortable: true,
+      sortDirection: dateSortDir,
+      onSort: () => setSort((s) => nextSortFor(s, 'date')),
+      render: (tx) => <Figure className="text-sm text-ink-muted">{formatDate(tx.date)}</Figure>,
+    },
+    {
+      key: 'description',
+      header: t.transaction.fields.description,
+      area: 'desc',
+      render: (tx) => {
+        const category = categoryById(tx.categoryId)
+        const type = transactionTypeById(tx.typeId)
+        const sourceWallet = walletById.get(tx.walletId)
+        const destWallet = tx.toWalletId ? walletById.get(tx.toWalletId) : undefined
+        return (
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-ink">
+              {tx.description || (category ? labelFor(category) : tx.categoryId)}
+            </span>
+            <span className="truncate text-xs text-ink-faint">
+              {category ? labelFor(category) : tx.categoryId}
+              {type ? ` · ${labelFor(type)}` : ''}
+              {' · '}
+              {sourceWallet?.name ?? tx.walletId}
+              {destWallet ? ` to ${destWallet.name}` : ''}
+            </span>
+          </span>
+        )
+      },
+    },
+    {
+      key: 'amount',
+      header: t.transaction.fields.amount,
+      area: 'amount',
+      align: 'right',
+      sortable: true,
+      sortDirection: amountSortDir,
+      onSort: () => setSort((s) => nextSortFor(s, 'amount')),
+      render: (tx) => (
+        <MoneyFigure
+          value={rowAmount(tx)}
+          tone={tx.direction === 'transfer' ? 'neutral' : 'auto'}
+          signDisplay={tx.direction === 'transfer' ? 'never' : 'always'}
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      // The column exists to hold controls, so it has no heading of its own.
+      // A caption naming it would be read out on every row for no benefit.
+      header: <span className="sr-only">{t.common.edit}</span>,
+      area: 'balance',
+      align: 'right',
+      render: (tx) => (
+        <span className="flex justify-end gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setEditing(tx)}>
+            {t.common.edit}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(tx)}>
+            {t.common.delete}
+          </Button>
+        </span>
+      ),
+    },
+  ]
+
   return (
-    <div className="flex flex-col gap-4">
+    <Page>
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-text">{t.transaction.title}</h1>
+        <h1 className="text-h2 leading-tight">{t.transaction.title}</h1>
         <Button onClick={() => setEditing('new')} disabled={walletList.length === 0}>
           {t.transaction.add}
         </Button>
       </header>
 
-      <FilterPanel value={filters} onChange={setFilters} wallets={walletList} baseCurrency={profile.baseCurrency} />
+      <div className="mt-6">
+        <FilterPanel
+          value={filters}
+          onChange={setFilters}
+          wallets={walletList}
+          baseCurrency={profile.baseCurrency}
+        />
+      </div>
 
-      <Card className="animate-fade-in">
-        <CardHeader className="flex-wrap">
-          <CardTitle>{t.transaction.title}</CardTitle>
-          {runningTotal && (
-            <span
-              className={`tnum text-sm font-semibold ${
-                runningTotal.minor > 0 ? 'text-positive' : runningTotal.minor < 0 ? 'text-negative' : 'text-muted'
-              }`}
-            >
-              {formatMoney(runningTotal, { signDisplay: 'always' })}
-            </span>
-          )}
-        </CardHeader>
-        <CardBody className="flex flex-col gap-4">
-          {loading ? (
-            <div className="flex flex-col gap-2">
-              <Skeleton shape="block" className="h-10 w-full" />
-              <Skeleton shape="block" className="h-10 w-full" />
-              <Skeleton shape="block" className="h-10 w-full" />
-            </div>
-          ) : rows.length === 0 ? (
-            <EmptyState title={filtersAreDefault(filters) ? t.empty.transactions : t.empty.searchResults} />
-          ) : (
-            <>
-              <Table>
-                <THead>
-                  <TR>
-                    <TH sortable sortDirection={dateSortDir} onSort={() => setSort((s) => nextSortFor(s, 'date'))}>
-                      {t.transaction.fields.date}
-                    </TH>
-                    <TH>{t.transaction.fields.description}</TH>
-                    <TH>{t.transaction.fields.category}</TH>
-                    <TH sortable sortDirection={amountSortDir} onSort={() => setSort((s) => nextSortFor(s, 'amount'))}>
-                      {t.transaction.fields.amount}
-                    </TH>
-                    <TH aria-label={t.common.edit} />
-                  </TR>
-                </THead>
-                <TBody>
-                  {rows.map((tx, index) => {
-                    const category = categoryById(tx.categoryId)
-                    const type = transactionTypeById(tx.typeId)
-                    const sourceWallet = walletById.get(tx.walletId)
-                    const destWallet = tx.toWalletId ? walletById.get(tx.toWalletId) : undefined
-                    return (
-                      <TR key={tx.id} className="animate-rise-in" style={staggerStyle(index)}>
-                        <TD>{formatDate(tx.date)}</TD>
-                        <TD>
-                          <div className="flex flex-col">
-                            <span>{tx.description || t.common.none}</span>
-                            <span className="text-xs text-muted">
-                              {sourceWallet?.name ?? tx.walletId}
-                              {destWallet ? ` -> ${destWallet.name}` : ''}
-                            </span>
-                          </div>
-                        </TD>
-                        <TD>
-                          <div className="flex flex-col">
-                            <span>{category ? `${category.emoji} ${labelFor(category)}` : tx.categoryId}</span>
-                            <span className="text-xs text-muted">{type ? labelFor(type) : tx.typeId}</span>
-                          </div>
-                        </TD>
-                        <TD numeric className={rowAmountClass(tx)}>
-                          {formatMoney(rowAmount(tx), { signDisplay: tx.direction === 'transfer' ? 'never' : 'always' })}
-                        </TD>
-                        <TD>
-                          <div className="flex justify-end gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => setEditing(tx)}>
-                              {t.common.edit}
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(tx)}>
-                              {t.common.delete}
-                            </Button>
-                          </div>
-                        </TD>
-                      </TR>
-                    )
-                  })}
-                </TBody>
-              </Table>
+      <Block title={t('transaction.filter.resultsCount', { count: rows.length, total })}>
+        {loading ? (
+          <div className="flex flex-col gap-2 py-2" aria-hidden="true">
+            <Skeleton shape="block" className="h-10 w-full" />
+            <Skeleton shape="block" className="h-10 w-full" />
+            <Skeleton shape="block" className="h-10 w-full" />
+          </div>
+        ) : rows.length === 0 ? (
+          <EmptyState title={filtersAreDefault(filters) ? t.empty.transactions : t.empty.searchResults} />
+        ) : (
+          <>
+            <LedgerTable
+              caption={t.transaction.title}
+              columns={columns}
+              rows={rows}
+              rowKey={(tx) => tx.id}
+              footerLabel={t.report.netBalance}
+              {...(runningTotal
+                ? {
+                    footer: {
+                      amount: (
+                        <MoneyFigure value={runningTotal} tone="auto" signDisplay="always" />
+                      ),
+                    },
+                  }
+                : {})}
+            />
 
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
-                <p>{t('transaction.filter.resultsCount', { count: rows.length, total })}</p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={page === 0}
-                  >
-                    {t.common.back}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={page * PAGE_SIZE + rows.length >= total}
-                  >
-                    {t.common.next}
-                  </Button>
-                </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-ink-muted">
+              <p>{t('transaction.filter.resultsCount', { count: rows.length, total })}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                >
+                  {t.common.back}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page * PAGE_SIZE + rows.length >= total}
+                >
+                  {t.common.next}
+                </Button>
               </div>
-            </>
-          )}
-        </CardBody>
-      </Card>
+            </div>
+          </>
+        )}
+      </Block>
 
       <Modal
         open={editing !== null}
@@ -281,8 +312,8 @@ export default function TransactionsPage() {
           </>
         }
       >
-        <p className="text-sm text-text">{t.transaction.deleteConfirm}</p>
+        <p className="text-sm text-ink">{t.transaction.deleteConfirm}</p>
       </Modal>
-    </div>
+    </Page>
   )
 }

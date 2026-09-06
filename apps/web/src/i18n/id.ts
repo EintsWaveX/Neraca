@@ -130,7 +130,6 @@ export const id: typeof en = {
     archived: 'Diarsipkan',
     balanceLabel: 'Saldo saat ini',
     totalBalance: 'Total saldo',
-    balance: 'Saldo',
   },
 
   transaction: {

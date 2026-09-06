@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '@/i18n'
 import { useProfile, useProfiles } from '@/app/ProfileProvider'
 import { useRepository } from '@/app/repo'
+import { Page } from '@/design/primitives'
 import {
   Button, Card, CardBody, CardHeader, CardTitle, Input, Select, Tabs, Textarea,
 } from '@/ui'
@@ -359,8 +360,8 @@ export default function SettingsPage() {
   const { t } = useI18n()
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6">
-      <h1 className="text-lg font-semibold text-text">{t.settings.title}</h1>
+    <Page>
+      <h1 className="text-h2 leading-tight">{t.settings.title}</h1>
 
       <Tabs
         label={t.settings.title}
@@ -372,6 +373,6 @@ export default function SettingsPage() {
           { id: 'data', label: t.csv.title, content: <DataPanel /> },
         ]}
       />
-    </div>
+    </Page>
   )
 }

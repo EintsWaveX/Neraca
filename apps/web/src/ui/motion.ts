@@ -24,9 +24,10 @@ export function staggerStyle(index: number): StaggerStyle {
 }
 
 /**
- * Reads the reduced-motion media query once. Not reactive on its own; a
- * hook that needs to react to it changing mid-session watches the query
- * itself (see useChartMotion in features/reports/charts.tsx).
+ * Reads the reduced-motion media query once. Not reactive on its own, which
+ * is enough for everything that still uses it: the charts moved to CSS
+ * animations, so the global rule in index.css switches them off without any
+ * hook having to watch the query at all.
  */
 export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches

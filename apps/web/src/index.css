@@ -643,6 +643,47 @@ dialog[open]::backdrop {
   transition: width var(--dur-slow) var(--ease), background-color var(--dur) var(--ease);
 }
 
+/*
+  Chart entrance.
+
+  Both are CSS animations rather than a JavaScript interpolation, which is the
+  whole reason the charts stopped using a library: the reduced motion block
+  below reaches a CSS animation and cannot reach a timer. A bar grows from its
+  own baseline, and a line draws itself along its length using pathLength="1"
+  so the dash maths needs no measurement of the real path.
+*/
+@keyframes grow-bar {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+.chart-bar {
+  transform-box: fill-box;
+  animation: grow-bar var(--dur-slow) var(--ease) both;
+  animation-delay: min(calc(var(--print-index, 0) * 18ms), 320ms);
+}
+
+/* Income sits above the zero line and expense below it, so each grows away
+   from the axis rather than both growing downward. */
+.chart-bar-up {
+  transform-origin: bottom;
+}
+.chart-bar-down {
+  transform-origin: top;
+}
+
+.chart-line {
+  stroke-dasharray: 1;
+  animation: draw-line 900ms var(--ease) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

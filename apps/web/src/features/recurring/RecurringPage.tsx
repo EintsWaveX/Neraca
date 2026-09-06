@@ -14,9 +14,8 @@ import type { CurrencyCode } from '@neraca/domain/currency'
 import { dueOccurrences, materialise, occurrencesBetween } from '@neraca/domain/recurring'
 import { findRate } from '@neraca/domain/rates'
 import { newId, nowIso } from '@/data/ids'
-import {
-  Badge, Button, Card, CardBody, EmptyState, Modal, Skeleton, staggerStyle,
-} from '@/ui'
+import { Badge, Button, EmptyState, Modal, Skeleton } from '@/ui'
+import { Block, Page, RuledRow } from '@/design/primitives'
 import { RecurringForm } from './RecurringForm'
 
 /**
@@ -190,21 +189,20 @@ export default function RecurringPage() {
   const loading = rulesAsync.loading
 
   return (
-    <div className="flex flex-col gap-5 pb-8">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-text">{t.recurring.title}</h1>
-        <Button size="sm" onClick={openCreate}>
-          {t.recurring.add}
-        </Button>
-      </div>
+    <Page>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-h2 leading-tight">{t.recurring.title}</h1>
+        <Button onClick={openCreate}>{t.recurring.add}</Button>
+      </header>
 
+      {/* A note in the margin rather than a filled band, for the same reason
+          the budget alerts are: the result of an action should not be the
+          loudest thing on the screen it happened on. */}
       {banner && (
         <div
           role="status"
-          className={`flex items-center justify-between gap-3 rounded-control border px-3 py-2 text-sm ${
-            banner.tone === 'positive'
-              ? 'border-positive/30 bg-positive-soft text-positive'
-              : 'border-warning/30 bg-warning-soft text-warning'
+          className={`mt-6 flex items-center justify-between gap-3 border-l-2 py-2 pl-3 text-sm ${
+            banner.tone === 'positive' ? 'border-credit text-credit' : 'border-stamp text-stamp'
           }`}
         >
           <span>{banner.text}</span>
@@ -219,85 +217,86 @@ export default function RecurringPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton shape="block" className="h-32 w-full" />
-          <Skeleton shape="block" className="h-32 w-full" />
-        </div>
-      ) : rules.length === 0 ? (
-        <EmptyState
-          title={t.empty.recurring}
-          action={
-            <Button size="sm" onClick={openCreate}>
-              {t.recurring.add}
-            </Button>
-          }
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {rules.map((rule, index) => {
+      <Block title={t.recurring.title}>
+        {loading ? (
+          <div className="flex flex-col gap-3 py-2" aria-hidden="true">
+            <Skeleton shape="block" className="h-16 w-full" />
+            <Skeleton shape="block" className="h-16 w-full" />
+          </div>
+        ) : rules.length === 0 ? (
+          <EmptyState
+            title={t.empty.recurring}
+            action={
+              <Button size="sm" onClick={openCreate}>
+                {t.recurring.add}
+              </Button>
+            }
+          />
+        ) : (
+          rules.map((rule, index) => {
             const due = dueOccurrences(rule, today).length > 0
             const next = nextDueDate(rule)
             const preview = previewDates(rule)
             return (
-              <Card key={rule.id} interactive className="animate-rise-in" style={staggerStyle(index)}>
-                <CardBody className="flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold text-text">{rule.name}</span>
-                      <span className="text-xs text-muted">{frequencyPhrase(rule)}</span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      {due && <Badge tone="warning">{t.recurring.pastDue}</Badge>}
-                      {!rule.active && <Badge tone="neutral">{t.common.no}</Badge>}
-                      <IconButton label={`${t.common.edit}: ${rule.name}`} onClick={() => openEdit(rule)}>
-                        <PencilIcon />
-                      </IconButton>
-                      <IconButton label={`${t.common.delete}: ${rule.name}`} onClick={() => setDeleteTarget(rule)}>
-                        <TrashIcon />
-                      </IconButton>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="text-muted">
+              <RuledRow
+                key={rule.id}
+                index={index}
+                label={rule.name}
+                note={frequencyPhrase(rule)}
+                value={
+                  <span className="flex items-center gap-2">
+                    {due && <Badge tone="warning">{t.recurring.pastDue}</Badge>}
+                    {!rule.active && <Badge tone="neutral">{t.recurring.fields.active}</Badge>}
+                    <IconButton label={`${t.common.edit}: ${rule.name}`} onClick={() => openEdit(rule)}>
+                      <PencilIcon />
+                    </IconButton>
+                    <IconButton
+                      label={`${t.common.delete}: ${rule.name}`}
+                      onClick={() => setDeleteTarget(rule)}
+                    >
+                      <TrashIcon />
+                    </IconButton>
+                  </span>
+                }
+                below={
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-ink-muted">
+                    <span>
                       {t.recurring.fields.nextRun}: {next ? formatDate(next) : t.common.none}
+                      {preview.length > 0 && (
+                        <>
+                          {' · '}
+                          {t.recurring.upcoming}: {preview.map((date) => formatDate(date)).join(', ')}
+                        </>
+                      )}
                     </span>
-                    <label className="flex items-center gap-2 text-xs font-medium text-text">
-                      <input
-                        type="checkbox"
-                        checked={rule.active}
-                        onChange={() => toggleActive(rule)}
-                        className="h-4 w-4 rounded border-line accent-accent"
-                      />
-                      {t.recurring.fields.active}
-                    </label>
+                    <span className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 text-ink-muted">
+                        <input
+                          type="checkbox"
+                          checked={rule.active}
+                          onChange={() => toggleActive(rule)}
+                          className="h-4 w-4 accent-[var(--indigo)]"
+                        />
+                        {t.recurring.fields.active}
+                      </label>
+                      {due && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={generatingId === rule.id}
+                          onClick={() => handleGenerateNow(rule)}
+                        >
+                          {t.recurring.runNow}
+                        </Button>
+                      )}
+                    </span>
                   </div>
-
-                  {preview.length > 0 && (
-                    <p className="text-xs text-muted">
-                      {t.recurring.upcoming}: {preview.map((date) => formatDate(date)).join(', ')}
-                    </p>
-                  )}
-
-                  {due && (
-                    <div className="flex justify-end">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        loading={generatingId === rule.id}
-                        onClick={() => handleGenerateNow(rule)}
-                      >
-                        {t.recurring.runNow}
-                      </Button>
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
+                }
+              />
             )
-          })}
-        </div>
-      )}
+          })
+        )}
+      </Block>
 
       <Modal
         open={formOpen}
@@ -336,7 +335,7 @@ export default function RecurringPage() {
       >
         <p className="text-sm text-muted">{t.recurring.deleteConfirm}</p>
       </Modal>
-    </div>
+    </Page>
   )
 }
 

@@ -13,19 +13,19 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode
 }
 
+// The glow this used to carry was drawn from a token the Passbook system
+// removed: nothing in a ledger emits light. A button now answers a press
+// by changing its own ground, which is also the cheaper effect, since a
+// background colour costs no new compositing layer.
 const variantClasses: Record<ButtonVariant, string> = {
-  // The soft shadow on hover/focus is the one glow this design system uses
-  // outside the active nav item, derived from --accent-glow (itself
-  // color-mix'd from --accent) rather than a hardcoded colour, so a primary
-  // button reads as the call to action without a second accent colour.
-  primary: 'bg-accent text-accent-text hover:bg-accent-hover hover:shadow-[0_0_16px_var(--accent-glow)] focus-visible:shadow-[0_0_16px_var(--accent-glow)]',
-  secondary: 'bg-surface text-text border border-line hover:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-accent',
-  ghost: 'bg-transparent text-text hover:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-accent',
-  // The negative token sits at nearly the same lightness as accent in both
-  // themes (see src/index.css), so accent-text, the token built for "text on
-  // top of a saturated, mid-lightness surface", also reads correctly here
-  // without inventing a colour the rest of the design system does not know.
-  danger: 'bg-negative text-accent-text hover:opacity-90',
+  primary: 'bg-indigo text-indigo-on hover:bg-indigo-hover',
+  secondary: 'border border-rule bg-paper-raised text-ink hover:border-rule-strong hover:bg-paper-sunken',
+  ghost: 'bg-transparent text-ink-muted hover:bg-paper-sunken hover:text-ink',
+  // The debit token sits at nearly the same lightness as the accent in both
+  // themes, so indigo-on, the token built for "text on a saturated surface of
+  // roughly this lightness", also reads correctly here without inventing a
+  // colour the rest of the system does not know about.
+  danger: 'bg-debit text-indigo-on hover:opacity-90',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -44,17 +44,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={isDisabled}
       aria-busy={loading || undefined}
-      // The lift and press live on transform, never on padding or border, so
-      // they cost no layout: hovering nudges the button up a hair, pressing
-      // it settles back down and slightly smaller, the same feedback a
-      // physical button gives. Disabled buttons get neither, since there is
-      // nothing to invite a press toward. The transition names its properties
-      // rather than using transition-all, so a variant adding a border or a
-      // filter does not silently animate it too.
+      // The press lives on transform, so it costs no layout. There is no lift
+      // on hover any more: in this system nothing floats above the page, and a
+      // control that rises off the paper contradicts every rule around it. The
+      // transition names its properties rather than using transition-all, so a
+      // variant adding a border or a filter does not silently animate too.
       className={cn(
-        "inline-flex items-center justify-center rounded-control font-medium transition-[color,background-color,box-shadow,transform] duration-[var(--dur)] ease-[var(--ease-out)]",
-        "hover:-translate-y-px active:translate-y-0 active:scale-[0.97]",
-        "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100",
+        "inline-flex items-center justify-center rounded-control font-medium transition-[color,background-color,border-color,transform] duration-[var(--dur-fast)] ease-[var(--ease)]",
+        "active:scale-[0.98]",
+        "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
         variantClasses[variant],
         sizeClasses[size],
         className

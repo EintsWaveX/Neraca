@@ -155,7 +155,7 @@ export default function DashboardPage() {
     },
     {
       key: 'balance',
-      header: t.wallet.balance,
+      header: t.wallet.balanceLabel,
       area: 'amount',
       align: 'right',
       render: (wallet) => <MoneyFigure value={walletBalance(wallet, transactions)} />,

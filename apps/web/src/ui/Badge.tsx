@@ -8,18 +8,20 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const toneClasses: Record<BadgeTone, string> = {
-  neutral: 'bg-surface-sunken text-muted border-line',
-  positive: 'bg-positive-soft text-positive border-positive/20',
-  negative: 'bg-negative-soft text-negative border-negative/20',
-  warning: 'bg-warning-soft text-warning border-warning/20',
-  accent: 'bg-accent-soft text-accent border-accent/20',
+  neutral: 'border-rule bg-paper-sunken text-ink-muted',
+  positive: 'border-credit/30 bg-credit-soft text-credit',
+  negative: 'border-debit/30 bg-debit-soft text-debit',
+  warning: 'border-stamp/30 bg-stamp-soft text-stamp',
+  accent: 'border-indigo/30 bg-indigo-soft text-indigo',
 }
 
 export function Badge({ tone = 'neutral', className, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium transition-colors duration-[var(--dur)] ease-[var(--ease-out)]",
+        // A stamp, not a pill: squared off, because a ledger marks a row with
+        // an inked rectangle and nothing in this system is capsule shaped.
+        "inline-flex items-center rounded-[2px] border px-1.5 py-0.5 text-xs transition-colors duration-[var(--dur-fast)] ease-[var(--ease)]",
         toneClasses[tone],
         className
       )}
