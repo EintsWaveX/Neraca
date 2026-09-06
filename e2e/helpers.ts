@@ -36,22 +36,36 @@ export async function enterDemo(page: Page): Promise<void> {
  * transient value during an animation is not a WCAG failure; the settled one
  * is what a reader actually reads.
  *
+ * Two things this has to get right, and the obvious version gets neither.
+ *
  * Animations that never end are excluded rather than waited for. The kawung
  * field is a 90 second infinite drift and the skeleton shimmer loops forever,
  * so waiting for either to reach a resting state waits for something that will
  * not happen. Neither is on a screen this suite currently visits, which is the
  * only reason the simpler version worked, and the first empty state that shows
  * one would have turned into a ten second timeout pointing at the wrong thing.
+ *
+ * And quiet has to be sustained rather than instantaneous. `getAnimations()`
+ * is empty both after everything has finished and before anything has begun,
+ * so a check that fires on the first quiet frame can pass in the gap between
+ * React committing the rows and the browser starting their entrance, which
+ * hands axe a page that starts fading the moment it begins reading. That is
+ * where the near miss contrast readings came from. Requiring several
+ * consecutive quiet frames tells the two kinds of silence apart.
  */
 export async function settle(page: Page): Promise<void> {
   await page.waitForFunction(
-    () =>
-      document.getAnimations().every((animation) => {
-        if (animation.effect?.getComputedTiming().iterations === Infinity) return true
-        return animation.playState !== 'running'
-      }),
+    () => {
+      const state = window as unknown as { __settleQuietFrames?: number }
+      const stillRunning = document.getAnimations().some((animation) => {
+        if (animation.effect?.getComputedTiming().iterations === Infinity) return false
+        return animation.playState === 'running'
+      })
+      state.__settleQuietFrames = stillRunning ? 0 : (state.__settleQuietFrames ?? 0) + 1
+      return state.__settleQuietFrames >= 5
+    },
     undefined,
-    { timeout: 10_000 },
+    { timeout: 10_000, polling: 'raf' },
   )
 }
 
