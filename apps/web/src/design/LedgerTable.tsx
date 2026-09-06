@@ -93,7 +93,14 @@ export function LedgerTable<T>({
   animate = true,
 }: LedgerTableProps<T>) {
   return (
-    <table role="table" className="ledger ledger-narrow w-full border-collapse text-left">
+    <table
+      role="table"
+      className="ledger ledger-narrow w-full border-collapse text-left"
+      /* A ledger with nothing to sort has no controls worth keeping on screen
+         when its rows fold, so the narrow layout takes the whole heading row
+         out of the layout rather than leaving a rule over a blank line. */
+      data-sortable={columns.some((col) => col.sortable) ? '' : undefined}
+    >
       <caption className="sr-only">{caption}</caption>
       <thead>
         <tr role="row" className="border-b border-rule-strong">
@@ -102,6 +109,11 @@ export function LedgerTable<T>({
               key={col.key}
               scope="col"
               aria-sort={col.sortable ? (col.sortDirection ?? 'none') : undefined}
+              /* Read by the narrow layout, which keeps the sortable headings on
+                 screen as the only way to reorder the register on a phone and
+                 tucks the rest away, since a heading with nothing to press has
+                 no column left to head once the row folds. */
+              data-sortable={col.sortable ? '' : undefined}
               className={[
                 'pb-2 text-sm font-normal text-ink-muted',
                 col.align === 'right' ? 'text-right' : '',

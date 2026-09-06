@@ -73,10 +73,23 @@
   --paper-sunken: oklch(95% 0.014 92);
   --paper-edge: oklch(93.2% 0.016 92);
 
-  /* Iron gall ink: not black, a blue black that browns as it oxidises. */
+  /*
+    Iron gall ink: not black, a blue black that browns as it oxidises.
+
+    The three steps are set by measured contrast against --paper, not by
+    eye. The first draft put faint at 66% lightness, which measured 2.89:1
+    and failed WCAG AA everywhere it was used, which was every secondary
+    label, every category note and every currency symbol on the page: 52
+    failing nodes on the register alone. Muted moved down with it to keep
+    three levels that are still visibly distinct from each other.
+
+      ink        25%   16.0:1
+      ink-muted  44%    7.2:1
+      ink-faint  54%    4.7:1   the AA floor for body text is 4.5:1
+  */
   --ink: oklch(25% 0.03 264);
-  --ink-muted: oklch(50% 0.024 264);
-  --ink-faint: oklch(66% 0.018 264);
+  --ink-muted: oklch(44% 0.024 264);
+  --ink-faint: oklch(54% 0.02 264);
 
   /* The feint ruled line, and the heavier rule drawn under a total. */
   --rule: oklch(88% 0.014 92);
@@ -97,8 +110,16 @@
   --debit: oklch(47% 0.15 30);
   --debit-soft: oklch(94% 0.036 30);
 
-  /* The teller's stamp, for a threshold passed or a payment overdue. */
-  --stamp: oklch(56% 0.155 55);
+  /*
+    The teller's stamp, for a threshold passed or a payment overdue.
+
+    Set at 50% rather than 56% because it is read on two grounds, not one.
+    Against paper the brighter value was fine at 4.5:1, but inside a warning
+    badge it sits on --stamp-soft and measured 4.1:1, below the floor. A colour
+    used on more than one surface has to clear the worst of them: this now
+    measures 5.3:1 on the badge and 5.8:1 on paper.
+  */
+  --stamp: oklch(50% 0.14 55);
   --stamp-soft: oklch(95% 0.045 55);
 
   /* Shadows exist only for things that genuinely float above the page. */
@@ -152,7 +173,8 @@
 
     --ink: oklch(94% 0.008 92);
     --ink-muted: oklch(71% 0.014 265);
-    --ink-faint: oklch(55% 0.016 265);
+    /* 4.8:1 against the dark ground. Was 55%, which measured 3.6:1. */
+    --ink-faint: oklch(62% 0.016 265);
 
     --rule: oklch(33% 0.03 265);
     --rule-strong: oklch(45% 0.038 265);
@@ -185,7 +207,7 @@
 
   --ink: oklch(94% 0.008 92);
   --ink-muted: oklch(71% 0.014 265);
-  --ink-faint: oklch(55% 0.016 265);
+  --ink-faint: oklch(62% 0.016 265);
 
   --rule: oklch(33% 0.03 265);
   --rule-strong: oklch(45% 0.038 265);
@@ -381,15 +403,45 @@ body {
 */
 @media (width < 48rem) {
   /* Once a row folds onto two lines there is no column for a heading to head,
-     so the heading row goes away visually. It stays in the accessibility tree,
-     which is what keeps the cells named for anybody not reading the layout. */
-  .ledger-narrow thead {
+     so a heading with nothing to press leaves the layout and keeps its place
+     in the accessibility tree, which is what names the cells for anybody not
+     reading the layout. A ledger with no sortable column at all takes its
+     whole heading row out the same way.
+
+     A sortable heading is the exception and stays on screen. Clipping it left
+     the sort buttons one pixel wide, so the register announced a control
+     through aria-sort that no thumb could reach and a phone was stuck with
+     whatever order the page loaded in. What survives is one line of sort
+     controls above the rows. */
+  .ledger-narrow:not([data-sortable]) thead,
+  .ledger-narrow thead th:not([data-sortable]) {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  .ledger-narrow thead tr {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  /* Pressed with a thumb rather than pointed at with a cursor, so the control
+     gets a target height the text alone would not give it. */
+  .ledger-narrow thead th[data-sortable] button {
+    min-height: 2.5rem;
+  }
+
+  /* The rows below become grids, so the table box no longer has table columns
+     to size, but it is still a table box and still sizes itself to its own
+     content: the intrinsic width of the widest row won over `width: 100%` and
+     the register ran 536px wide inside a 412px phone. Fixed layout makes the
+     declared width the width, which is the whole point of folding the rows. */
+  .ledger-narrow {
+    table-layout: fixed;
   }
 
   .ledger tr {
@@ -402,8 +454,13 @@ body {
     padding-block: var(--row-pad);
   }
 
+  /* A grid item's automatic minimum size is its min-content width, which is
+     wide enough to hold the longest description unbroken and would push the
+     amount off the right edge again. `truncate` on the text inside cannot fire
+     until the cell itself is allowed to be narrower than its contents. */
   .ledger td {
     padding: 0;
+    min-width: 0;
   }
 
   .ledger .c-date {

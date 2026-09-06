@@ -219,6 +219,7 @@ export default function DashboardPage() {
       )}
 
       <Hero
+        labelAs="h1"
         label={t.wallet.totalBalance}
         value={
           worth ? (

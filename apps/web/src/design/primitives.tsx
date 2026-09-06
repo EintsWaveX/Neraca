@@ -86,16 +86,27 @@ export interface HeroProps {
   value: ReactNode
   meta?: ReactNode
   children?: ReactNode
+  /**
+   * Render the label as the page's h1.
+   *
+   * The dashboard has no other heading, so without this it was the one
+   * screen in the app with no h1 at all, which leaves anybody navigating
+   * by headings with nothing to land on. Screens that already carry their
+   * own h1 above the hero leave this alone, since two h1 elements is its
+   * own problem.
+   */
+  labelAs?: 'p' | 'h1'
 }
 
 /**
  * The one figure a screen exists to show, set against the book's binding.
  * Only one of these per screen: a page with two heroes has none.
  */
-export function Hero({ label, value, meta, children }: HeroProps) {
+export function Hero({ label, value, meta, children, labelAs = 'p' }: HeroProps) {
+  const Label = labelAs
   return (
     <div className="spine pl-4 sm:pl-6">
-      <p className="text-sm text-ink-muted">{label}</p>
+      <Label className="text-sm font-normal text-ink-muted">{label}</Label>
       <p className="text-display leading-none">{value}</p>
       {meta && <p className="mt-2 text-sm text-ink-muted">{meta}</p>}
       {children}

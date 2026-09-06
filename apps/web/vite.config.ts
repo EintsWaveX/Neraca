@@ -3,6 +3,28 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
+import { readFileSync } from 'node:fs'
+
+/*
+  The production security headers, read from the one place they are defined.
+
+  Vercel applies vercel.json at the edge, which `vite preview` knows nothing
+  about, so without this the end to end test asserting a strict Content
+  Security Policy would be testing a page served with no policy at all and
+  passing for the wrong reason. Reading the real file means the preview server
+  and production cannot drift, and a directive loosened in vercel.json fails
+  the test that guards it rather than quietly taking effect.
+*/
+function productionHeaders(): Record<string, string> {
+  const config = JSON.parse(
+    readFileSync(path.resolve(import.meta.dirname, '../../vercel.json'), 'utf8'),
+  ) as { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> }
+
+  const everyPath = config.headers?.find((entry) => entry.source === '/(.*)')
+  if (!everyPath) throw new Error('vercel.json has no headers block for /(.*)')
+
+  return Object.fromEntries(everyPath.headers.map((h) => [h.key, h.value]))
+}
 
 // Deployed to Vercel, which serves the build at the domain root, so asset URLs
 // need no prefix. This was '/FinancialAM/' while the app lived on GitHub Pages
@@ -58,6 +80,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+  },
+  // Preview only, never dev: the dev server injects styles and the HMR
+  // client inline, which the production policy correctly forbids.
+  preview: {
+    headers: productionHeaders(),
   },
   test: {
     name: 'web',
