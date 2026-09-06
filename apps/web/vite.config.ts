@@ -20,16 +20,17 @@ export default defineConfig({
       // build waits behind a dismissible bar the visitor chooses to accept.
       registerType: 'prompt',
       manifest: {
-        name: 'FinancialAM',
-        short_name: 'FinancialAM',
-        description: 'A personal finance manager in your browser',
+        name: 'Neraca',
+        short_name: 'Neraca',
+        description: 'A private, local first personal finance ledger',
         display: 'standalone',
-        // A manifest cannot read a CSS custom property, so these two are the
-        // only place a colour is written literally. They are the sRGB values of
-        // the --accent and --surface tokens in src/index.css, not a Tailwind
-        // palette entry. If those tokens move, these move with them.
-        theme_color: '#008f86',
-        background_color: '#ffffff',
+        // A manifest cannot read a CSS custom property, so this is one of the
+        // two places a colour is written literally, the other being the
+        // theme-color meta tags in index.html. Both carry the sRGB value of the
+        // --paper token in src/index.css. If that token moves, these move with
+        // it.
+        theme_color: '#f9f6ee',
+        background_color: '#f9f6ee',
         // The SVG scales to any size a launcher asks for, but iOS ignores SVG
         // icons entirely and Android needs a maskable one to avoid having the
         // glyph cropped by whatever shape the launcher applies, so the PNGs in

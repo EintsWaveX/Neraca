@@ -10,7 +10,7 @@
 
 export const en = {
   common: {
-    appName: 'FinancialAM',
+    appName: 'Neraca',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -129,6 +129,8 @@ export const en = {
     archived: 'Archived',
     balanceLabel: 'Current balance',
     totalBalance: 'Total balance',
+    /** One wallet's own balance, in that wallet's own currency. */
+    balance: 'Balance',
   },
 
   transaction: {
@@ -374,7 +376,7 @@ export const en = {
   },
 
   update: {
-    available: 'A new version of FinancialAM is ready.',
+    available: 'A new version of Neraca is ready.',
     reload: 'Reload',
     dismiss: 'Not now',
   },

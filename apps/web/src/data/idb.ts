@@ -18,7 +18,7 @@ import { newId, nowIso } from './ids'
 const DB_NAME = 'financialam'
 const DB_VERSION = 1
 
-interface FinancialAMSchema extends DBSchema {
+interface NeracaSchema extends DBSchema {
   profiles: {
     key: string
     value: Profile
@@ -55,12 +55,12 @@ interface FinancialAMSchema extends DBSchema {
   }
 }
 
-const ALL_STORES: StoreNames<FinancialAMSchema>[] = [
+const ALL_STORES: StoreNames<NeracaSchema>[] = [
   'profiles', 'wallets', 'transactions', 'budgets', 'recurring', 'rates',
 ]
 
-function openDatabase(): Promise<IDBPDatabase<FinancialAMSchema>> {
-  return openDB<FinancialAMSchema>(DB_NAME, DB_VERSION, {
+function openDatabase(): Promise<IDBPDatabase<NeracaSchema>> {
+  return openDB<NeracaSchema>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       db.createObjectStore('profiles', { keyPath: 'id' })
 
@@ -164,9 +164,9 @@ function page<T>(rows: T[], offset: number | undefined, limit: number | undefine
 }
 
 export class IdbRepository implements Repository {
-  private dbPromise: Promise<IDBPDatabase<FinancialAMSchema>> | undefined
+  private dbPromise: Promise<IDBPDatabase<NeracaSchema>> | undefined
 
-  private db(): Promise<IDBPDatabase<FinancialAMSchema>> {
+  private db(): Promise<IDBPDatabase<NeracaSchema>> {
     if (!this.dbPromise) this.dbPromise = openDatabase()
     return this.dbPromise
   }

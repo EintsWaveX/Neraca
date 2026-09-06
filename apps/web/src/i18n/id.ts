@@ -11,7 +11,7 @@ import type { en } from './en'
 
 export const id: typeof en = {
   common: {
-    appName: 'FinancialAM',
+    appName: 'Neraca',
     save: 'Simpan',
     cancel: 'Batal',
     delete: 'Hapus',
@@ -130,6 +130,7 @@ export const id: typeof en = {
     archived: 'Diarsipkan',
     balanceLabel: 'Saldo saat ini',
     totalBalance: 'Total saldo',
+    balance: 'Saldo',
   },
 
   transaction: {
@@ -375,7 +376,7 @@ export const id: typeof en = {
   },
 
   update: {
-    available: 'Versi baru FinancialAM sudah siap.',
+    available: 'Versi baru Neraca sudah siap.',
     reload: 'Muat ulang',
     dismiss: 'Nanti saja',
   },

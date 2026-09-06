@@ -7,12 +7,15 @@
          home screen icon has to be declared here as a PNG or it falls back to
          a screenshot of the page. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- The sRGB value of the --accent token in src/index.css, matching the
-         manifest's theme_color. Kept in both places because neither a manifest
-         nor a meta tag can read a CSS custom property. -->
-    <meta name="theme-color" content="#008f86" />
+    <!-- The sRGB values of the --paper token in src/index.css, in each theme.
+         Kept literal here because neither a meta tag nor a manifest can read a
+         CSS custom property. The browser chrome should match the page's own
+         ground rather than its accent, or the address bar reads as a stripe of
+         unrelated colour above the page. -->
+    <meta name="theme-color" content="#f9f6ee" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121929" media="(prefers-color-scheme: dark)" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FinancialAM</title>
+    <title>Neraca</title>
   </head>
   <body>
     <div id="root"></div>

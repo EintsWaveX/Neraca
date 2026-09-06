@@ -52,8 +52,8 @@ export function Layout() {
   return (
     <div className="flex min-h-dvh flex-col bg-bg md:flex-row">
       {/* Desktop sidebar. Hidden entirely below md so it never competes with the bottom tab bar for space. */}
-      <aside className="hidden shrink-0 flex-col gap-1 border-r border-line bg-surface px-3 py-4 md:flex md:w-56">
-        <div className="mb-3 px-2 text-base font-semibold text-text">{t.common.appName}</div>
+      <aside className="hidden shrink-0 flex-col gap-1 border-r border-rule bg-paper-sunken py-4 md:flex md:w-56">
+        <div className="mb-4 px-4 text-h3 lowercase tracking-tight text-ink">{t.common.appName}</div>
         <nav aria-label={t.nav.dashboard} className="flex flex-col gap-1">
           {NAV_ITEMS.map((item) => (
             <NavLink
@@ -61,10 +61,10 @@ export function Layout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-control px-2.5 py-2 text-sm font-medium transition-colors duration-[var(--dur)] ease-[var(--ease-out)] ${
+                `flex items-center gap-2.5 border-l-2 px-4 py-2 text-sm transition-colors duration-[var(--dur-fast)] ease-[var(--ease)] ${
                   isActive
-                    ? 'bg-accent-soft text-accent nav-active-glow'
-                    : 'text-muted hover:bg-surface-sunken hover:text-text'
+                    ? 'border-indigo bg-paper font-medium text-ink'
+                    : 'border-transparent text-ink-muted hover:bg-paper hover:text-ink'
                 }`
               }
             >
@@ -78,7 +78,7 @@ export function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
+        <header className="flex items-center justify-between gap-3 border-b border-rule bg-paper px-4 py-3 sm:px-6">
           <ProfileSwitch
             profiles={profiles}
             currentId={profile.id}
@@ -103,7 +103,7 @@ export function Layout() {
 
       <nav
         aria-label={t.nav.dashboard}
-        className="fixed inset-x-0 bottom-0 z-10 flex justify-around overflow-x-auto border-t border-line bg-surface px-1 py-1 [padding-bottom:env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-10 flex justify-around overflow-x-auto border-t border-rule bg-paper-sunken px-1 [padding-bottom:env(safe-area-inset-bottom)] md:hidden"
       >
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -111,8 +111,8 @@ export function Layout() {
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex min-w-14 flex-col items-center gap-0.5 rounded-control px-1.5 py-1.5 text-[0.65rem] font-medium transition-colors duration-[var(--dur)] ease-[var(--ease-out)] ${
-                isActive ? 'text-accent nav-active-glow' : 'text-muted'
+              `flex min-w-14 flex-col items-center gap-0.5 border-t-2 px-1.5 py-1.5 text-[0.65rem] font-medium transition-colors duration-[var(--dur-fast)] ease-[var(--ease)] ${
+                isActive ? 'border-indigo text-ink' : 'border-transparent text-ink-muted'
               }`
             }
           >

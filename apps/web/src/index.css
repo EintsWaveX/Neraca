@@ -48,6 +48,11 @@
      does not, because paper has corners. */
   --radius-control: 0.25rem;
   --radius-sheet: 0.5rem;
+  /* The screens written against the previous system still ask for this one.
+     Pointing it at the sheet radius rather than deleting it means they adopt
+     the new geometry as they are rebuilt, instead of losing their corners the
+     moment the tokens changed underneath them. */
+  --radius-card: 0.5rem;
 }
 
 :root {
@@ -99,8 +104,13 @@
   /* Shadows exist only for things that genuinely float above the page. */
   --shadow-sheet: 0 1px 2px oklch(25% 0.03 264 / 0.06), 0 8px 24px oklch(25% 0.03 264 / 0.08);
   --shadow-lifted: 0 12px 40px oklch(25% 0.03 264 / 0.18);
+  --shadow-card: var(--shadow-sheet);
+  --shadow-pop: var(--shadow-lifted);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* The old name for the same curve, still referenced by the screens waiting
+     to be rebuilt. */
+  --ease-out: var(--ease);
   --dur-fast: 120ms;
   --dur: 200ms;
   --dur-slow: 350ms;
@@ -195,6 +205,8 @@
 
   --shadow-sheet: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.3);
   --shadow-lifted: 0 12px 40px oklch(0% 0 0 / 0.5);
+  --shadow-card: var(--shadow-sheet);
+  --shadow-pop: var(--shadow-lifted);
 }
 
 /*
@@ -367,16 +379,19 @@ body {
   most browsers, and somebody reading this with a screen reader should still
   be told it is a table.
 */
-.ledger-narrow thead {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 @media (width < 48rem) {
+  /* Once a row folds onto two lines there is no column for a heading to head,
+     so the heading row goes away visually. It stays in the accessibility tree,
+     which is what keeps the cells named for anybody not reading the layout. */
+  .ledger-narrow thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .ledger tr {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -545,6 +560,87 @@ dialog[open]::backdrop {
 */
 [data-month-hue] {
   --indigo: oklch(44% 0.132 calc(268 + var(--month-hue, 0)));
+}
+
+/*
+  The previous system's vocabulary, mapped onto this one.
+
+  Every screen not yet rebuilt still writes these class names. Mapping them
+  rather than deleting them means those screens adopt the ledger's behaviour
+  the moment the tokens change, instead of silently losing their motion and
+  their tabular figures and having to be chased down one at a time. Each name
+  disappears as its last caller is rewritten.
+*/
+
+/* Figures line up in a column only when the digits are tabular. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Was a fade and a six pixel rise. It is now the printed row, so a list of
+   entries anywhere in the app arrives the way the ledger's rows do. */
+.animate-rise-in {
+  animation: print-row var(--dur-slow) var(--ease) both;
+  animation-delay: min(calc(var(--stagger-index, 0) * 18ms), 320ms);
+}
+
+.animate-fade-in {
+  animation: fade-in var(--dur-slow) var(--ease) both;
+}
+
+.animate-scale-in {
+  animation: lift-in var(--dur) var(--ease) both;
+}
+
+/* A routed page settles by opacity alone, so navigation never shifts layout. */
+.animate-route {
+  animation: fade-in var(--dur) var(--ease) both;
+}
+
+/* A shimmering sweep for loading placeholders, in place of a flat pulse. */
+.animate-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--paper-sunken) 40%,
+    var(--paper-raised) 50%,
+    var(--paper-sunken) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/*
+  A whole record that acts as one interactive unit. It used to lift two pixels
+  and grow a shadow. In a ledger nothing floats, so it tints its ground
+  instead, which is also the cheaper effect: a background colour change does
+  not invalidate the layer the way a transform and a new shadow do.
+*/
+.card-interactive {
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.card-interactive:hover,
+.card-interactive:focus-within {
+  background: var(--paper-sunken);
+  border-color: var(--rule-strong);
+}
+
+/*
+  A progress or budget bar's fill. The track around it never changes size, so
+  animating this element's width cannot shift anything outside it, which is
+  the one exception the system makes to never animating width.
+*/
+.bar-fill {
+  transition: width var(--dur-slow) var(--ease), background-color var(--dur) var(--ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
