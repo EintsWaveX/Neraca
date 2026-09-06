@@ -18,6 +18,7 @@
     "verify": "npm run typecheck && npm run test && npm run build && npm run budget",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
+    "smoke": "playwright test -c playwright.smoke.config.ts",
     "budget": "node scripts/check-bundle-size.mjs",
     "verify:full": "npm run verify && npm run e2e"
   },

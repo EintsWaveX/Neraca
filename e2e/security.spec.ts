@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { enterDemo } from './helpers'
+import { enterDemo, expectProductionHeaders } from './helpers'
 
 /**
  * The security posture, asserted rather than hoped for.
@@ -8,58 +8,14 @@ import { enterDemo } from './helpers'
  * vercel.json (see the `preview.headers` note in apps/web/vite.config.ts), so
  * loosening a directive in the deployed configuration fails here instead of
  * quietly shipping.
+ *
+ * The header expectations themselves live in helpers.ts, because the smoke
+ * suite asserts the same ones against the deployed origin and the two must not
+ * be allowed to drift.
  */
 
-interface Directives {
-  [name: string]: string[]
-}
-
-function parseCsp(header: string): Directives {
-  const out: Directives = {}
-  for (const part of header.split(';')) {
-    const [name, ...values] = part.trim().split(/\s+/)
-    if (name) out[name] = values
-  }
-  return out
-}
-
-test('the policy forbids inline and injected script', async ({ page }) => {
-  const response = await page.goto('/')
-  const csp = response?.headers()['content-security-policy']
-  expect(csp, 'no Content-Security-Policy header was served').toBeTruthy()
-
-  const directives = parseCsp(csp!)
-
-  // The two that actually stop cross site scripting. Everything else on this
-  // page is defence in depth; these are the load bearing ones.
-  expect(directives['script-src']).toEqual(["'self'"])
-  expect(directives['script-src']).not.toContain("'unsafe-inline'")
-  expect(directives['script-src']).not.toContain("'unsafe-eval'")
-
-  // Nothing may embed this app, which is what stops a clickjacked transfer.
-  expect(directives['frame-ancestors']).toEqual(["'none'"])
-  expect(directives['object-src']).toEqual(["'none'"])
-  expect(directives['base-uri']).toEqual(["'self'"])
-
-  // Fonts are self hosted precisely so this can be closed. If a font ever
-  // moves back to a CDN, this fails and the decision has to be made again out
-  // loud rather than by adding a domain to a list.
-  expect(directives['font-src']).toEqual(["'self'"])
-
-  // Inline style attributes are allowed because React sets them for the
-  // stagger index and the bar widths; inline <style> elements are not.
-  expect(directives['style-src']).toEqual(["'self'"])
-  expect(directives['style-src-attr']).toEqual(["'unsafe-inline'"])
-})
-
-test('the supporting headers are all present', async ({ page }) => {
-  const response = await page.goto('/')
-  const headers = response!.headers()
-
-  expect(headers['x-content-type-options']).toBe('nosniff')
-  expect(headers['referrer-policy']).toBe('no-referrer')
-  expect(headers['cross-origin-opener-policy']).toBe('same-origin')
-  expect(headers['permissions-policy']).toContain('geolocation=()')
+test('the production header block is served', async ({ page }) => {
+  await expectProductionHeaders(await page.goto('/'))
 })
 
 test('the page carries no inline script for a policy to have to allow', async ({ page }) => {

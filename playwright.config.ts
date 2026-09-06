@@ -12,6 +12,9 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  // The smoke suite needs a deployment rather than this config's preview
+  // server, so it has its own config and is kept out of this one's run.
+  testIgnore: '**/smoke.spec.ts',
   fullyParallel: true,
   // A test that only passes sometimes is worse than no test, so a retry in CI
   // is allowed to mask a flake exactly once and the run is still reported.
