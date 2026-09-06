@@ -9,7 +9,8 @@ came from me and which choices the agent made inside them.
 
 Two builds of one personal finance program.
 
-`cli/` holds the original C console application, 8,281 lines, and it is a
+`cli/` holds the original C console application, 8,101 lines in the Windows
+build and 8,119 in the POSIX one, and it is a
 maintained build rather than an archive. `web/` holds the browser version. The
 web build is not a port of the terminal interface: the domain, the data model
 and the business rules carry over, the arrow-key menus and the Windows message

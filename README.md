@@ -6,7 +6,7 @@ console program it grew out of.**
 | Build | Where | What it is |
 |---|---|---|
 | **Web** | [financial-am.vercel.app](https://financial-am.vercel.app/) | React and TypeScript, runs entirely in the browser, no server |
-| **Console** | `cli/` | The original, 8,281 lines of C using only the standard library plus Win32 |
+| **Console** | `cli/` | The original, 8,101 lines of C using only the standard library plus Win32, with a POSIX variant of 8,119 beside it |
 
 Both are maintained. The console version is the lightweight build, not an
 archive, and a rule corrected in one gets corrected in the other.
