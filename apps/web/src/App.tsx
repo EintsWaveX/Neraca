@@ -15,6 +15,11 @@ const RecurringPage = lazy(() => import('./features/recurring/RecurringPage'))
 const ReportsPage = lazy(() => import('./features/reports/ReportsPage'))
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'))
 
+// The design specimen sits outside the profile gate on purpose: it is the page
+// the design system is reviewed on, and needing an unlocked profile to look at
+// a colour swatch would make that review harder than it has to be.
+const Specimen = lazy(() => import('./design/Specimen'))
+
 /** Shown while a lazy page chunk is loading, and while a page's own first async read is in flight. */
 function PageSkeleton() {
   return (
@@ -51,6 +56,7 @@ const router = createBrowserRouter(
         { path: '/settings', element: withSuspense(<SettingsPage />) },
       ],
     },
+    { path: '/specimen', element: withSuspense(<Specimen />) },
   ],
   // Vercel serves the app from the domain root, so BASE_URL is '/' and this
   // is a no-op today. It stays threaded through rather than hardcoded so a

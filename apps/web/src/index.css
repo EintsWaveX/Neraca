@@ -1,148 +1,249 @@
 @import 'tailwindcss';
 
+/* Self hosted so the first paint never waits on a third party, and so the
+   Content Security Policy can forbid outside font origins outright. */
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
 /*
-  The shared design system.
+  Neraca: the Passbook system.
 
-  One typography scale, one spacing rhythm and one set of surface tokens are
-  used across all five of the rebuilt applications, with only the accent ramp
-  changing per app. FinancialAM takes teal. Keeping everything else identical
-  is what makes the set read as one body of work rather than five unrelated
-  projects, and it means the component layer only gets written once.
+  The reference is the buku tabungan, the savings passbook a branch prints for
+  you on an impact printer: fixed pitch figures, feint ruled rows, a running
+  balance down the right hand edge. Behind that sits the ledger book proper,
+  iron gall ink on warm stock, with a heavier rule under a total.
 
-  Colour is defined as tokens on :root for light, then overridden for dark. No
-  colour gets its only definition inside a media query, so a browser reporting
-  no preference still has a complete palette to work from.
+  What follows from that reference, and what makes this different from the
+  card-and-shadow layout it replaces:
+
+  - Structure comes from ruled lines and typography, never from a card with a
+    shadow under it. A card here means a genuinely contained thing, such as a
+    dialog. A row of money is a ruled row.
+  - Every figure is monospaced and tabular, because a column of money that does
+    not line up is a column you cannot scan.
+  - Colour carries exactly one meaning, the direction money moved, and it is
+    never the only carrier: sign, alignment and weight say the same thing, so
+    the table survives being read by somebody who cannot separate the hues.
+  - Motion imitates printing. A row arrives by being laid down left to right,
+    once, on arrival. Nothing loops behind a number.
 */
 
 @theme {
-  --font-sans: 'Inter var', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+  --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
 
-  --radius-card: 0.875rem;
-  --radius-control: 0.625rem;
+  /* A 1.25 major third from a 16px body. The display size is reserved for the
+     one balance that answers the question you opened the app to ask. */
+  --text-display: 3.052rem;
+  --text-h1: 1.953rem;
+  --text-h2: 1.563rem;
+  --text-h3: 1.25rem;
+  --text-body: 1rem;
+  --text-sm: 0.8rem;
+  --text-xs: 0.64rem;
+
+  /* Controls keep a small radius because they are objects you press. Paper
+     does not, because paper has corners. */
+  --radius-control: 0.25rem;
+  --radius-sheet: 0.5rem;
 }
 
 :root {
   color-scheme: light;
 
-  /* Surfaces, from furthest back to closest to the reader. */
-  --bg: oklch(98.5% 0.004 210);
-  --surface: oklch(100% 0 0);
-  --surface-raised: oklch(99.2% 0.003 210);
-  --surface-sunken: oklch(96.4% 0.006 210);
+  /*
+    Four steps of stock, not two. A dense ledger needs enough separation to
+    keep a sunken gutter, the sheet, a raised sheet and a lifted edge legible
+    against each other without reaching for a shadow.
 
-  --text: oklch(23% 0.015 240);
-  --text-muted: oklch(52% 0.014 240);
-  --text-faint: oklch(66% 0.012 240);
+    The hue is 92, a green leaning yellow. This is deliberately not the warm
+    cream that sits at the centre of every generated page: ledger and newsprint
+    stock is manila, closer to green than to pink, and the difference is what
+    stops this reading as a template.
+  */
+  --paper: oklch(97.4% 0.011 92);
+  --paper-raised: oklch(99.2% 0.006 92);
+  --paper-sunken: oklch(95% 0.014 92);
+  --paper-edge: oklch(93.2% 0.016 92);
 
-  --border: oklch(91% 0.007 240);
-  --border-strong: oklch(84% 0.011 240);
+  /* Iron gall ink: not black, a blue black that browns as it oxidises. */
+  --ink: oklch(25% 0.03 264);
+  --ink-muted: oklch(50% 0.024 264);
+  --ink-faint: oklch(66% 0.018 264);
 
-  /* Accent. Teal for this app. */
-  --accent: oklch(58% 0.114 187);
-  --accent-hover: oklch(52% 0.118 187);
-  --accent-soft: oklch(95% 0.032 187);
-  --accent-text: oklch(100% 0 0);
+  /* The feint ruled line, and the heavier rule drawn under a total. */
+  --rule: oklch(88% 0.014 92);
+  --rule-strong: oklch(76% 0.022 92);
 
-  /* Semantic. Money in reads positive, money out reads negative. */
-  --positive: oklch(58% 0.135 152);
-  --positive-soft: oklch(95% 0.04 152);
-  --negative: oklch(57% 0.176 25);
-  --negative-soft: oklch(95% 0.035 25);
-  --warning: oklch(72% 0.145 76);
-  --warning-soft: oklch(96% 0.05 76);
+  /* One accent. Indigo is both the iron gall of ledger ink and the nila dye
+     of batik, so it is the single colour this product has any claim on. */
+  --indigo: oklch(44% 0.132 268);
+  --indigo-hover: oklch(38% 0.14 268);
+  --indigo-soft: oklch(94% 0.03 268);
+  --indigo-on: oklch(99% 0.004 92);
 
-  --shadow-card: 0 1px 2px oklch(23% 0.015 240 / 0.05), 0 4px 16px oklch(23% 0.015 240 / 0.05);
-  --shadow-pop: 0 8px 32px oklch(23% 0.015 240 / 0.12);
+  /* Ledger semantics. Credit is money in, debit is money out. Both are muted
+     rather than bright: a purchase is not an error, and a salary is not a
+     success toast. */
+  --credit: oklch(45% 0.095 158);
+  --credit-soft: oklch(94% 0.032 158);
+  --debit: oklch(47% 0.15 30);
+  --debit-soft: oklch(94% 0.036 30);
+
+  /* The teller's stamp, for a threshold passed or a payment overdue. */
+  --stamp: oklch(56% 0.155 55);
+  --stamp-soft: oklch(95% 0.045 55);
+
+  /* Shadows exist only for things that genuinely float above the page. */
+  --shadow-sheet: 0 1px 2px oklch(25% 0.03 264 / 0.06), 0 8px 24px oklch(25% 0.03 264 / 0.08);
+  --shadow-lifted: 0 12px 40px oklch(25% 0.03 264 / 0.18);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 350ms;
+
+  /* Row height is a user setting, not a house opinion. A power user wants a
+     compact table and an occasional visitor wants air, and the same person
+     wants different things on a phone and on a desk. */
+  --row-h: 2.75rem;
+  --row-pad: 0.625rem;
 }
 
-/* System preference, only when the visitor has not chosen explicitly. */
+:root[data-density='compact'] {
+  --row-h: 2rem;
+  --row-pad: 0.3125rem;
+}
+
+/*
+  Dark mode is a deep indigo ground rather than a tinted near black, so the
+  page still reads as ink and stock rather than as a terminal. The first pass
+  sat at 18.5% lightness and 0.024 chroma, which on a real screen simply read
+  as black: below roughly 0.03 chroma the hue stops being perceptible at these
+  lightnesses, and the indigo the whole palette is built on disappeared. Four
+  steps again, because dark surfaces bleed into each other far more readily
+  than light ones and two steps is not enough separation to keep panels
+  apart.
+
+  Defined once under the system preference and once under an explicit choice,
+  so an explicit choice wins in both directions and a browser reporting no
+  preference still has a complete palette from the block above.
+*/
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
-    --bg: oklch(17% 0.012 240);
-    --surface: oklch(21% 0.014 240);
-    --surface-raised: oklch(24.5% 0.015 240);
-    --surface-sunken: oklch(14.5% 0.011 240);
+    --paper: oklch(21.5% 0.033 265);
+    --paper-raised: oklch(25.5% 0.036 265);
+    --paper-sunken: oklch(17.5% 0.03 265);
+    --paper-edge: oklch(29.5% 0.04 265);
 
-    --text: oklch(95% 0.006 240);
-    --text-muted: oklch(72% 0.012 240);
-    --text-faint: oklch(56% 0.013 240);
+    --ink: oklch(94% 0.008 92);
+    --ink-muted: oklch(71% 0.014 265);
+    --ink-faint: oklch(55% 0.016 265);
 
-    --border: oklch(29% 0.014 240);
-    --border-strong: oklch(37% 0.016 240);
+    --rule: oklch(33% 0.03 265);
+    --rule-strong: oklch(45% 0.038 265);
 
-    --accent: oklch(72% 0.108 187);
-    --accent-hover: oklch(78% 0.104 187);
-    --accent-soft: oklch(29% 0.045 187);
-    --accent-text: oklch(17% 0.012 240);
+    --indigo: oklch(74% 0.115 268);
+    --indigo-hover: oklch(81% 0.1 268);
+    --indigo-soft: oklch(32% 0.062 268);
+    --indigo-on: oklch(19% 0.03 265);
 
-    --positive: oklch(74% 0.135 152);
-    --positive-soft: oklch(28% 0.05 152);
-    --negative: oklch(70% 0.155 25);
-    --negative-soft: oklch(28% 0.055 25);
-    --warning: oklch(80% 0.13 76);
-    --warning-soft: oklch(30% 0.06 76);
+    --credit: oklch(75% 0.115 158);
+    --credit-soft: oklch(27% 0.05 158);
+    --debit: oklch(71% 0.145 30);
+    --debit-soft: oklch(28% 0.055 30);
 
-    --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.3), 0 4px 16px oklch(0% 0 0 / 0.24);
-    --shadow-pop: 0 8px 32px oklch(0% 0 0 / 0.45);
+    --stamp: oklch(78% 0.135 55);
+    --stamp-soft: oklch(29% 0.055 55);
+
+    --shadow-sheet: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.3);
+    --shadow-lifted: 0 12px 40px oklch(0% 0 0 / 0.5);
   }
 }
 
-/* An explicit choice wins over the system preference, in both directions. */
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: oklch(17% 0.012 240);
-  --surface: oklch(21% 0.014 240);
-  --surface-raised: oklch(24.5% 0.015 240);
-  --surface-sunken: oklch(14.5% 0.011 240);
+  --paper: oklch(21.5% 0.033 265);
+  --paper-raised: oklch(25.5% 0.036 265);
+  --paper-sunken: oklch(17.5% 0.03 265);
+  --paper-edge: oklch(29.5% 0.04 265);
 
-  --text: oklch(95% 0.006 240);
-  --text-muted: oklch(72% 0.012 240);
-  --text-faint: oklch(56% 0.013 240);
+  --ink: oklch(94% 0.008 92);
+  --ink-muted: oklch(71% 0.014 265);
+  --ink-faint: oklch(55% 0.016 265);
 
-  --border: oklch(29% 0.014 240);
-  --border-strong: oklch(37% 0.016 240);
+  --rule: oklch(33% 0.03 265);
+  --rule-strong: oklch(45% 0.038 265);
 
-  --accent: oklch(72% 0.108 187);
-  --accent-hover: oklch(78% 0.104 187);
-  --accent-soft: oklch(29% 0.045 187);
-  --accent-text: oklch(17% 0.012 240);
+  --indigo: oklch(74% 0.115 268);
+  --indigo-hover: oklch(81% 0.1 268);
+  --indigo-soft: oklch(32% 0.062 268);
+  --indigo-on: oklch(19% 0.03 265);
 
-  --positive: oklch(74% 0.135 152);
-  --positive-soft: oklch(28% 0.05 152);
-  --negative: oklch(70% 0.155 25);
-  --negative-soft: oklch(28% 0.055 25);
-  --warning: oklch(80% 0.13 76);
-  --warning-soft: oklch(30% 0.06 76);
+  --credit: oklch(75% 0.115 158);
+  --credit-soft: oklch(27% 0.05 158);
+  --debit: oklch(71% 0.145 30);
+  --debit-soft: oklch(28% 0.055 30);
 
-  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.3), 0 4px 16px oklch(0% 0 0 / 0.24);
-  --shadow-pop: 0 8px 32px oklch(0% 0 0 / 0.45);
+  --stamp: oklch(78% 0.135 55);
+  --stamp-soft: oklch(29% 0.055 55);
+
+  --shadow-sheet: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.3);
+  --shadow-lifted: 0 12px 40px oklch(0% 0 0 / 0.5);
 }
 
-/* Expose the tokens to Tailwind so utilities like bg-surface exist. */
+/*
+  Expose the tokens to Tailwind. The generic names on the right are kept
+  deliberately: the screens still to be rebuilt were written against bg,
+  surface, muted and line, so they keep rendering while they are replaced one
+  at a time rather than all breaking at once.
+*/
 @theme inline {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
-  --color-surface-sunken: var(--surface-sunken);
-  --color-text: var(--text);
-  --color-muted: var(--text-muted);
-  --color-faint: var(--text-faint);
-  --color-line: var(--border);
-  --color-line-strong: var(--border-strong);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-soft: var(--accent-soft);
-  --color-accent-text: var(--accent-text);
-  --color-positive: var(--positive);
-  --color-positive-soft: var(--positive-soft);
-  --color-negative: var(--negative);
-  --color-negative-soft: var(--negative-soft);
-  --color-warning: var(--warning);
-  --color-warning-soft: var(--warning-soft);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunken: var(--paper-sunken);
+  --color-paper-edge: var(--paper-edge);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-indigo: var(--indigo);
+  --color-indigo-hover: var(--indigo-hover);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-indigo-on: var(--indigo-on);
+  --color-credit: var(--credit);
+  --color-credit-soft: var(--credit-soft);
+  --color-debit: var(--debit);
+  --color-debit-soft: var(--debit-soft);
+  --color-stamp: var(--stamp);
+  --color-stamp-soft: var(--stamp-soft);
+
+  /* Aliases the not-yet-rebuilt screens still reference. */
+  --color-bg: var(--paper);
+  --color-surface: var(--paper-raised);
+  --color-surface-raised: var(--paper-raised);
+  --color-surface-sunken: var(--paper-sunken);
+  --color-text: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-faint: var(--ink-faint);
+  --color-line: var(--rule);
+  --color-line-strong: var(--rule-strong);
+  --color-accent: var(--indigo);
+  --color-accent-hover: var(--indigo-hover);
+  --color-accent-soft: var(--indigo-soft);
+  --color-accent-text: var(--indigo-on);
+  --color-positive: var(--credit);
+  --color-positive-soft: var(--credit-soft);
+  --color-negative: var(--debit);
+  --color-negative-soft: var(--debit-soft);
+  --color-warning: var(--stamp);
+  --color-warning-soft: var(--stamp-soft);
 }
 
 html {
@@ -150,47 +251,194 @@ html {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Money only lines up in a column when the digits are tabular. */
-.tnum {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum';
+/* Prose only. Tables and figures are exempt, since a table wants the width. */
+.measure {
+  max-width: 68ch;
 }
 
-:where(a, button, input, select, textarea):focus-visible {
-  outline: 2px solid var(--accent);
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--indigo);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 /*
-  Motion vocabulary.
+  Figures.
 
-  One easing curve, three durations and a handful of named keyframes, so
-  every animation in the app (this file, src/ui, the feature screens) is
-  drawn from the same small system rather than invented per component. The
-  reduced-motion block further down zeroes every animation-duration and
-  transition-duration, so nothing defined here needs its own escape hatch;
-  it only needs to actually use `animation` or `transition`, never a
-  JavaScript-driven loop that would bypass that rule (see useCountUp and
-  useMountedPercent in src/ui, which check the media query themselves).
+  Everything numeric is monospaced and tabular. `.figure` is the base; the
+  three spans inside a money value let the eye land on the significant digits
+  by pushing the symbol and the minor units back a step in both size and
+  weight. Rp 1.500.000 and $12.34 then read the same way despite one of them
+  having no minor units at all.
 */
-:root {
-  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
-  --dur-fast: 120ms;
-  --dur: 200ms;
-  --dur-slow: 320ms;
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+  letter-spacing: -0.01em;
+}
 
-  /* A soft, translucent version of the accent colour for glows and focus
-     rings, so those effects stay in step with the accent ramp automatically
-     rather than needing their own light/dark override blocks. */
-  --accent-glow: color-mix(in oklab, var(--accent) 45%, transparent);
+/*
+  The one balance that answers the question you opened the app to ask. Set in
+  the sans, because monospace exists to make a column line up and this figure
+  has no column: in Plex Mono the thousands separator takes a full character
+  width, which at display size punches holes straight through the number.
+  Tabular figures are kept so the digits still hold their positions while a
+  value counts up or a month is switched.
+*/
+.figure-display {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.figure-symbol {
+  font-size: 0.72em;
+  color: var(--ink-faint);
+  margin-right: 0.25em;
+  font-weight: 400;
+}
+
+.figure-minor {
+  font-size: 0.74em;
+  color: var(--ink-muted);
+}
+
+.figure-credit {
+  color: var(--credit);
+}
+.figure-debit {
+  color: var(--debit);
+}
+
+/*
+  The ledger.
+
+  A ruled row, not a card. The rule belongs to the row above it, so a group of
+  rows ends flush rather than with a dangling line, and a totals row upgrades
+  its own rule to the heavier weight the way a ledger draws under a sum.
+*/
+.ledger-row {
+  display: grid;
+  align-items: center;
+  min-height: var(--row-h);
+  padding-block: var(--row-pad);
+  border-bottom: 1px solid var(--rule);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.ledger-row:last-child {
+  border-bottom: 0;
+}
+
+.ledger-row[data-interactive]:hover,
+.ledger-row[data-interactive]:focus-within {
+  background: var(--paper-sunken);
+}
+
+.ledger-total {
+  border-top: 2px solid var(--rule-strong);
+  border-bottom: 0;
+}
+
+/*
+  A ledger on a narrow screen.
+
+  Four columns on a phone either scroll sideways or shrink the figures past
+  legibility, and neither is acceptable on the primary screen of a finance
+  app. Below the breakpoint each row folds onto two lines: what happened and
+  how much on the first, when and the running balance on the second. The
+  amount stays hard right on both lines so the column a reader scans still
+  exists.
+
+  The table markup is kept and its roles are restated in the JSX, because
+  changing `display` on a table element drops the implicit table semantics in
+  most browsers, and somebody reading this with a screen reader should still
+  be told it is a table.
+*/
+.ledger-narrow thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (width < 48rem) {
+  .ledger tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'date amount'
+      'desc balance';
+    column-gap: 1rem;
+    padding-block: var(--row-pad);
+  }
+
+  .ledger td {
+    padding: 0;
+  }
+
+  .ledger .c-date {
+    grid-area: date;
+  }
+  .ledger .c-desc {
+    grid-area: desc;
+  }
+  .ledger .c-amount {
+    grid-area: amount;
+    text-align: right;
+  }
+  .ledger .c-balance {
+    grid-area: balance;
+    text-align: right;
+  }
+}
+
+/* The binding edge of the book, run down the left of a content column. */
+.spine {
+  border-left: 1px solid var(--rule);
+}
+
+/*
+  Motion.
+
+  One curve, three durations. Everything is expressed as a CSS transition or
+  animation so the reduced motion block at the bottom of this file covers all
+  of it without any component needing its own escape hatch.
+*/
+@keyframes print-row {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+@keyframes draw-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @keyframes fade-in {
@@ -199,107 +447,104 @@ body {
   }
 }
 
-@keyframes rise-in {
+@keyframes lift-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px) scale(0.995);
   }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-
-@keyframes shimmer {
-  from {
-    background-position: 200% 0;
-  }
-  to {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes glow-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-  50% {
-    box-shadow: 0 0 14px 1px var(--accent-glow);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in var(--dur-slow) var(--ease-out) both;
 }
 
 /*
-  Entrance for list items and dashboard tiles. --stagger-index is set inline
-  per element (see staggerStyle in src/ui/motion.ts) as a CSS custom
-  property rather than a computed inline delay, so the actual timing curve
-  lives in exactly one place. The `min()` caps the cumulative delay at
-  300ms so a long list never leaves a row still animating in once a reader
-  has scrolled past it.
+  A row being laid down by an impact printer, left to right. The stagger is a
+  custom property set per element rather than a computed inline delay, so the
+  timing curve lives in one place, and the total is capped at 320ms so a long
+  list is never still printing once a reader has scrolled past it.
 */
-.animate-rise-in {
-  animation: rise-in var(--dur-slow) var(--ease-out) both;
-  animation-delay: min(calc(var(--stagger-index, 0) * 24ms), 300ms);
+.print-in {
+  animation: print-row var(--dur-slow) var(--ease) both;
+  animation-delay: min(calc(var(--print-index, 0) * 18ms), 320ms);
 }
 
-.animate-scale-in {
-  animation: scale-in var(--dur) var(--ease-out) both;
+.rule-in {
+  transform-origin: left center;
+  animation: draw-rule var(--dur-slow) var(--ease) both;
 }
 
-/* A shimmering sweep for loading placeholders, in place of a flat pulse. */
-.animate-shimmer {
-  background: linear-gradient(100deg, var(--surface-sunken) 40%, var(--surface-raised) 50%, var(--surface-sunken) 60%);
-  background-size: 200% 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
+.fade-in {
+  animation: fade-in var(--dur) var(--ease) both;
 }
 
-/*
-  Lift used only where a whole card acts as one interactive unit (a record
-  with its own edit/delete controls, for example), not on purely
-  presentational cards, so hover never implies an affordance that is not
-  there.
-*/
-.card-interactive {
-  transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
-}
-.card-interactive:hover,
-.card-interactive:focus-within {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-pop);
+.lift-in {
+  animation: lift-in var(--dur) var(--ease) both;
 }
 
-/*
-  A budget or progress bar's own fill. The track around it never changes
-  size, so animating this element's width cannot shift anything outside
-  it, the one exception the motion pass makes to "never animate width".
-*/
-.bar-fill {
-  transition: width var(--dur-slow) var(--ease-out), background-color var(--dur) var(--ease-out);
-}
-
-/* The one place a persistent glow is welcome: the single active nav item. */
-.nav-active-glow {
-  animation: glow-pulse 2.6s ease-in-out infinite;
-}
-
-/* A brief settle for routed page content, without touching layout: opacity only. */
-.animate-route {
-  animation: fade-in var(--dur) var(--ease-out) both;
-}
-
-/* Modal open: the dialog itself scales and fades in, its backdrop just fades. showModal()'s focus handling in Modal.tsx runs independently of this, so the animation never delays or replaces it. */
 dialog[open] {
-  animation: scale-in var(--dur) var(--ease-out) both;
+  animation: lift-in var(--dur) var(--ease) both;
 }
 dialog[open]::backdrop {
-  animation: fade-in var(--dur) var(--ease-out) both;
+  animation: fade-in var(--dur) var(--ease) both;
+}
+
+/*
+  The kawung field.
+
+  Four overlapping ellipses on a square tile, the batik motif this palette's
+  indigo is named for. It exists only on shell surfaces: sign in, the lock
+  screen, an empty state. It must never sit behind a table or a balance, which
+  is the one rule that lets an app about money have a moving background at all.
+
+  The drift is a transform on an oversized pseudo element rather than an
+  animated background-position, so it composites on the GPU instead of
+  repainting the tile every frame. It also stops when the tab is hidden, since
+  a background nobody is looking at is pure battery cost.
+*/
+.kawung {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.kawung::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  /*
+    Kawung is drawn, not filled: four outlined petals meeting at a point,
+    repeated on an offset grid. Each gradient is a ring rather than a disc,
+    which is what separates the motif from a field of dots. The colour is
+    mixed into the paper rather than laid on top of it, so the field stays
+    inside the same family as the surface and never reads as a blue tile.
+  */
+  --petal: color-mix(in oklab, var(--indigo) 22%, var(--paper));
+  background-image:
+    radial-gradient(ellipse 17px 26px at 50% 0%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%),
+    radial-gradient(ellipse 17px 26px at 50% 100%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%),
+    radial-gradient(ellipse 26px 17px at 0% 50%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%),
+    radial-gradient(ellipse 26px 17px at 100% 50%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%);
+  background-size: 72px 72px;
+  opacity: 0.65;
+  animation: kawung-drift 90s linear infinite;
+  will-change: transform;
+}
+
+@keyframes kawung-drift {
+  to {
+    transform: translate3d(72px, 72px, 0);
+  }
+}
+
+.kawung[data-paused]::before {
+  animation-play-state: paused;
+}
+
+/*
+  The accent walks a little with the month in view, so moving through time is
+  felt rather than announced. Twelve degrees across a whole year is under the
+  threshold where anyone would name the change, which is the point.
+*/
+[data-month-hue] {
+  --indigo: oklch(44% 0.132 calc(268 + var(--month-hue, 0)));
 }
 
 @media (prefers-reduced-motion: reduce) {
