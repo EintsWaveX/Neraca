@@ -1,0 +1,23 @@
+# What the build does not need.
+#
+# The build command is `npm run verify`, which typechecks, runs the unit tests,
+# builds apps/web and checks the bundle budget. Everything below is outside
+# that path: the C console build, the Playwright suites and their artefacts,
+# the dormant workflows, and the documents. Keeping them out of the upload
+# keeps a deploy about the thing being deployed.
+#
+# The end to end suites are deliberately excluded. They are a gate that runs
+# before a deploy, on a machine with a browser, not during one.
+
+cli
+e2e
+playwright.config.ts
+playwright.smoke.config.ts
+playwright-report
+test-results
+
+.github
+*.md
+
+.lighthouseci
+coverage
