@@ -85,6 +85,30 @@ test('no screen scrolls sideways on a phone', async ({ page }, testInfo) => {
   }
 })
 
+test('the register is on the first screen of a phone', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'there is room for the open panel on a desktop')
+
+  await enterDemo(page)
+  await page.goto('/transactions')
+
+  const firstRow = page.locator('table.ledger tbody tr').first()
+  await expect(firstRow).toBeVisible()
+
+  // Expanded, the search and filter panel is nine controls tall and pushed the
+  // register off the bottom of the screen, so the visitor met the way to narrow
+  // the list before meeting the list. The panel is collapsed by default below
+  // the breakpoint now, and this is the assertion that says so in terms of what
+  // a reader actually sees rather than in terms of a class name.
+  const box = await firstRow.boundingBox()
+  const viewport = page.viewportSize()
+  expect(box, 'the first row had no box at all').not.toBeNull()
+  expect(await page.evaluate(() => window.scrollY), 'the page was already scrolled').toBe(0)
+  expect(
+    box!.y,
+    `the first row sat at ${Math.round(box!.y)}px in a ${viewport!.height}px viewport`,
+  ).toBeLessThan(viewport!.height)
+})
+
 test('sorting the register by amount reorders it and announces the direction', async ({
   page,
 }) => {

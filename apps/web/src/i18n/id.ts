@@ -168,6 +168,9 @@ export const id: typeof en = {
       searchPlaceholder: 'Cari berdasarkan keterangan',
       reset: 'Atur ulang filter',
       resultsCount: 'Menampilkan {count} dari {total} transaksi',
+      show: 'Tampilkan filter',
+      hide: 'Sembunyikan filter',
+      active: 'Terfilter',
     },
   },
 

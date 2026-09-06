@@ -16,7 +16,8 @@ import type { TransactionQuery } from '@/data/repository'
 import { CATEGORY_GROUPS, CATEGORY_GROUP_LABELS, categoriesInGroup } from '@neraca/domain/categories'
 import { TRANSACTION_TYPES } from '@neraca/domain/txTypes'
 import type { Money } from '@neraca/domain/money'
-import { Card, CardBody, CardHeader, CardTitle, Button, Input, MoneyInput } from '@/ui'
+import { useId, useState } from 'react'
+import { Badge, Card, CardBody, CardHeader, CardTitle, Button, Input, MoneyInput } from '@/ui'
 import { useI18n } from '@/i18n'
 
 export interface TransactionFiltersState {
@@ -137,6 +138,25 @@ export interface FilterPanelProps {
 export function FilterPanel({ value, onChange, wallets, baseCurrency }: FilterPanelProps) {
   const { t, labelFor } = useI18n()
 
+  /*
+    Closed on a phone, open on a desktop, with no media query in JavaScript.
+
+    Expanded, this panel is nine controls tall, which on a phone filled the
+    entire first screen and left the register itself below the fold: the
+    visitor had to scroll past the way to narrow the list before reaching the
+    list. Collapsing it is done in CSS rather than by measuring the viewport,
+    so the desktop layout is untouched and there is no frame where the wrong
+    state is painted. The toggle is `md:hidden`, which is `display: none` above
+    the breakpoint and therefore out of the accessibility tree too, so a
+    desktop reader is never offered a control that does nothing.
+
+    The breakpoint is the same 48rem where LedgerTable folds its rows, so both
+    halves of this screen agree on where a phone begins.
+  */
+  const [open, setOpen] = useState(false)
+  const bodyId = useId()
+  const filtered = !filtersAreDefault(value)
+
   function patch(partial: Partial<TransactionFiltersState>) {
     onChange({ ...value, ...partial })
   }
@@ -153,12 +173,34 @@ export function FilterPanel({ value, onChange, wallets, baseCurrency }: FilterPa
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t.transaction.filter.title}</CardTitle>
-        <Button variant="ghost" size="sm" onClick={() => onChange(createEmptyFilters())}>
-          {t.transaction.filter.reset}
-        </Button>
+        <span className="flex items-baseline gap-2">
+          <CardTitle>{t.transaction.filter.title}</CardTitle>
+          {/* Collapsed, the panel would otherwise hide the fact that the list
+              below it is already narrowed, which reads as missing data. */}
+          {filtered && <Badge tone="accent">{t.transaction.filter.active}</Badge>}
+        </span>
+        <span className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => onChange(createEmptyFilters())}>
+            {t.transaction.filter.reset}
+          </Button>
+          <Button
+            className="md:hidden"
+            variant="ghost"
+            size="sm"
+            aria-expanded={open}
+            aria-controls={bodyId}
+            onClick={() => setOpen((wasOpen) => !wasOpen)}
+          >
+            {open ? t.transaction.filter.hide : t.transaction.filter.show}
+          </Button>
+        </span>
       </CardHeader>
-      <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <CardBody
+        id={bodyId}
+        className={`${
+          open ? 'grid' : 'hidden md:grid'
+        } grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3`}
+      >
         <Input
           label={t.common.search}
           placeholder={t.transaction.filter.searchPlaceholder}

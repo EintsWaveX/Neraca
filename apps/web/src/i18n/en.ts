@@ -167,6 +167,9 @@ export const en = {
       searchPlaceholder: 'Search by description',
       reset: 'Reset filters',
       resultsCount: 'Showing {count} of {total} transactions',
+      show: 'Show filters',
+      hide: 'Hide filters',
+      active: 'Filtered',
     },
   },
 
