@@ -78,19 +78,25 @@ npm run dev
 ```bash
 npm run verify        # typecheck, unit tests, build, bundle budget
 npm run verify:full   # the above, then the end to end suite
-npm run lint          # Oxlint, not a release gate
+npm run lint          # Oxlint, expected to report nothing
+SMOKE_URL=https://neraca-ledger.vercel.app npm run smoke
 ```
 
 `npm run verify` is what the deployment runs, so a failing typecheck or test
 fails the deploy rather than reaching the live site. It covers 201 unit tests
 over the domain rules and the storage layer.
 
-`npm run e2e` adds 42 Playwright tests across a desktop viewport and a Pixel 7,
+`npm run e2e` adds 44 Playwright tests across a desktop viewport and a Pixel 7,
 run against `vite preview` rather than the dev server: the dev server injects
 its HMR client and its styles inline, which the production Content Security
 Policy correctly forbids, so a suite pointed at dev would pass while the real
-deployment was broken. They cover the journeys, the security headers, and
-accessibility through axe.
+deployment was broken. They cover the journeys, the write paths, the security
+headers, and accessibility through axe.
+
+`npm run smoke` is the last four, and they need a real deployment rather than a
+local build. A configuration file is a request, not a result: only the edge can
+show that the policy was applied, that the single page rewrites survived, and
+that the cache headers landed on the paths they were written for.
 
 ### How it is put together
 

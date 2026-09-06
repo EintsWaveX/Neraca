@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Page, type Response } from '@playwright/test'
 
 /**
  * Open the app and get into the seeded demo profile.
@@ -35,12 +35,37 @@ export async function enterDemo(page: Page): Promise<void> {
  * were all the same one token at different points in its own entrance. A
  * transient value during an animation is not a WCAG failure; the settled one
  * is what a reader actually reads.
+ *
+ * Two things this has to get right, and the obvious version gets neither.
+ *
+ * Animations that never end are excluded rather than waited for. The kawung
+ * field is a 90 second infinite drift and the skeleton shimmer loops forever,
+ * so waiting for either to reach a resting state waits for something that will
+ * not happen. Neither is on a screen this suite currently visits, which is the
+ * only reason the simpler version worked, and the first empty state that shows
+ * one would have turned into a ten second timeout pointing at the wrong thing.
+ *
+ * And quiet has to be sustained rather than instantaneous. `getAnimations()`
+ * is empty both after everything has finished and before anything has begun,
+ * so a check that fires on the first quiet frame can pass in the gap between
+ * React committing the rows and the browser starting their entrance, which
+ * hands axe a page that starts fading the moment it begins reading. That is
+ * where the near miss contrast readings came from. Requiring several
+ * consecutive quiet frames tells the two kinds of silence apart.
  */
 export async function settle(page: Page): Promise<void> {
   await page.waitForFunction(
-    () => document.getAnimations().every((animation) => animation.playState !== 'running'),
+    () => {
+      const state = window as unknown as { __settleQuietFrames?: number }
+      const stillRunning = document.getAnimations().some((animation) => {
+        if (animation.effect?.getComputedTiming().iterations === Infinity) return false
+        return animation.playState === 'running'
+      })
+      state.__settleQuietFrames = stillRunning ? 0 : (state.__settleQuietFrames ?? 0) + 1
+      return state.__settleQuietFrames >= 5
+    },
     undefined,
-    { timeout: 10_000 },
+    { timeout: 10_000, polling: 'raf' },
   )
 }
 
@@ -68,3 +93,58 @@ export const SCREENS = [
   { path: '/reports', heading: /reports/i, name: 'reports' },
   { path: '/settings', heading: /settings/i, name: 'settings' },
 ] as const
+
+/** One directive name to the tokens that follow it. */
+export function parseCsp(header: string): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const part of header.split(';')) {
+    const [name, ...values] = part.trim().split(/\s+/)
+    if (name) out[name] = values
+  }
+  return out
+}
+
+/**
+ * The production header block, asserted in one place.
+ *
+ * Two suites need it. The local one runs against `vite preview`, which replays
+ * the block out of vercel.json through the `preview.headers` hook in
+ * apps/web/vite.config.ts, and the smoke one runs against the deployed origin,
+ * where Vercel serves it for real. Writing the expectations twice would let the
+ * two drift, and a policy that passes locally while production serves
+ * something weaker is the exact failure these tests exist to catch.
+ */
+export async function expectProductionHeaders(response: Response | null): Promise<void> {
+  expect(response, 'no response at all').not.toBeNull()
+  const headers = response!.headers()
+
+  const csp = headers['content-security-policy']
+  expect(csp, 'no Content-Security-Policy header was served').toBeTruthy()
+  const directives = parseCsp(csp!)
+
+  // The two that actually stop cross site scripting. Everything else here is
+  // defence in depth; these are the load bearing ones.
+  expect(directives['script-src']).toEqual(["'self'"])
+  expect(directives['script-src']).not.toContain("'unsafe-inline'")
+  expect(directives['script-src']).not.toContain("'unsafe-eval'")
+
+  // Nothing may embed this app, which is what stops a clickjacked transfer.
+  expect(directives['frame-ancestors']).toEqual(["'none'"])
+  expect(directives['object-src']).toEqual(["'none'"])
+  expect(directives['base-uri']).toEqual(["'self'"])
+
+  // Fonts are self hosted precisely so this can be closed. If a font ever
+  // moves back to a CDN, this fails and the decision has to be made again out
+  // loud rather than by adding a domain to a list.
+  expect(directives['font-src']).toEqual(["'self'"])
+
+  // Inline style attributes are allowed because React sets them for the
+  // stagger index and the bar widths; inline <style> elements are not.
+  expect(directives['style-src']).toEqual(["'self'"])
+  expect(directives['style-src-attr']).toEqual(["'unsafe-inline'"])
+
+  expect(headers['x-content-type-options']).toBe('nosniff')
+  expect(headers['referrer-policy']).toBe('no-referrer')
+  expect(headers['cross-origin-opener-policy']).toBe('same-origin')
+  expect(headers['permissions-policy']).toContain('geolocation=()')
+}

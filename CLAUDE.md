@@ -127,7 +127,8 @@ than it looks like it does.
 ```
 npm run verify        # typecheck (strict), unit tests, build, bundle budget
 npm run verify:full   # the above, then the end to end suite
-npm run lint          # Oxlint, not a gate, but new warnings are worth reading
+npm run lint          # Oxlint, which reports nothing; keep it that way
+SMOKE_URL=<origin> npm run smoke   # against a deployment, not a local build
 ```
 
 The `buildCommand` in the root `vercel.json` runs `npm run verify`, so a broken
@@ -142,6 +143,16 @@ runs against `vite preview` and never the dev server: the dev server injects
 its HMR client and its styles inline, which the production Content Security
 Policy correctly forbids, so a suite pointed at dev would pass while the real
 deployment was broken.
+
+`npm run smoke` is separate again, and needs an origin in `SMOKE_URL` rather
+than guessing one. It asserts the same header block against a real deployment,
+because `vite preview` only replays what vercel.json asks for and cannot show
+that Vercel granted it. Run it after anything that touches vercel.json.
+
+The lint list is expected to be empty. Two rules are off repository wide with
+the reasons written into `packages/config/oxlintrc.json`, and the handful of
+remaining suppressions each say at the line what the rule missed. A warning
+that appears is a warning to act on, which is only true while there are none.
 
 The two workflows under `.github/workflows/` do the same job better, because
 the gates surface as pull request checks rather than as a build log, but they

@@ -161,6 +161,7 @@ function CreateProfileModal({
   // <Modal> keeps its content mounted between opens for its close animation.
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line react/set-state-in-effect -- the external system being synchronised with is the modal's own mount lifecycle, which outlives this state.
       setDisplayName('')
       setBaseCurrency('IDR')
       setError(null)

@@ -14,6 +14,8 @@
  * same form.
  */
 
+/* oxlint-disable jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/click-events-have-key-events -- this is the ARIA combobox pattern, which requires exactly these roles on exactly these elements. The keyboard path is the input's own onKeyDown, which is where the pattern says it belongs; the click handlers on the options are the pointer path for the same actions. Rewriting either to satisfy the rule would break the pattern the component exists to provide. */
+
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 export interface ComboboxOption {

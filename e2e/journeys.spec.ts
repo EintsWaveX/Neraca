@@ -145,8 +145,8 @@ test('a transaction can be added and appears in the register', async ({ page }) 
 
   // The form is closed again rather than submitted: the point of this test is
   // that the dialog opens, traps focus and closes cleanly, which is the part
-  // that breaks when a modal is restyled. Submitting is covered by the unit
-  // tests over the repository, where the assertion can be about the data.
+  // that breaks when a modal is restyled. Actually saving through it, and
+  // editing and deleting afterwards, is write-paths.spec.ts.
   await page.keyboard.press('Escape')
   await expect(dialog).not.toBeVisible()
 

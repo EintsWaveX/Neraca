@@ -52,6 +52,7 @@ function ProfileSection() {
   // Keeps the form in step if the profile is edited from elsewhere (a CSV or
   // JSON import that changes the active profile's own record, for example).
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- synchronising with a prop that changes outside this component is what an effect is for; there is nothing to derive during render because the form is editable after it loads.
     setForm(formFromProfile(profile))
   }, [profile])
 

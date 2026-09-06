@@ -2,6 +2,25 @@
   "plugins": ["react", "typescript", "oxc", "jsx_a11y"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+
+    // Two rules are off across the whole repository rather than suppressed
+    // line by line, because in both cases the rule asks for something this
+    // codebase has decided against on purpose and the suppressions would
+    // outnumber the findings.
+
+    // Fires on every custom widget that carries an ARIA role: the combobox
+    // that cannot be a <select> without losing type ahead over 55 categories,
+    // the ledger rows that restate table roles because display:grid drops the
+    // implicit ones, the progress bars and the live regions. Each is a
+    // deliberate choice explained where it is made, and the rule cannot tell
+    // those apart from a div that should have been a button.
+    "jsx-a11y/prefer-tag-over-role": "off",
+
+    // A Fast Refresh hint rather than a correctness one: it asks that a module
+    // export only components. This codebase colocates a screen's helpers with
+    // the screen they serve, so filter state lives beside the filter panel and
+    // form field types beside the form. Splitting twenty modules to make an
+    // editor refresh marginally better is the wrong trade.
+    "react/only-export-components": "off"
   }
 }
