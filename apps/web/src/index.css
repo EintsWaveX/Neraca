@@ -1,0 +1,753 @@
+@import 'tailwindcss';
+
+/* Self hosted so the first paint never waits on a third party, and so the
+   Content Security Policy can forbid outside font origins outright. */
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+/*
+  Neraca: the Passbook system.
+
+  The reference is the buku tabungan, the savings passbook a branch prints for
+  you on an impact printer: fixed pitch figures, feint ruled rows, a running
+  balance down the right hand edge. Behind that sits the ledger book proper,
+  iron gall ink on warm stock, with a heavier rule under a total.
+
+  What follows from that reference, and what makes this different from the
+  card-and-shadow layout it replaces:
+
+  - Structure comes from ruled lines and typography, never from a card with a
+    shadow under it. A card here means a genuinely contained thing, such as a
+    dialog. A row of money is a ruled row.
+  - Every figure is monospaced and tabular, because a column of money that does
+    not line up is a column you cannot scan.
+  - Colour carries exactly one meaning, the direction money moved, and it is
+    never the only carrier: sign, alignment and weight say the same thing, so
+    the table survives being read by somebody who cannot separate the hues.
+  - Motion imitates printing. A row arrives by being laid down left to right,
+    once, on arrival. Nothing loops behind a number.
+*/
+
+@theme {
+  --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+
+  /* A 1.25 major third from a 16px body. The display size is reserved for the
+     one balance that answers the question you opened the app to ask. */
+  --text-display: 3.052rem;
+  --text-h1: 1.953rem;
+  --text-h2: 1.563rem;
+  --text-h3: 1.25rem;
+  --text-body: 1rem;
+  --text-sm: 0.8rem;
+  --text-xs: 0.64rem;
+
+  /* Controls keep a small radius because they are objects you press. Paper
+     does not, because paper has corners. */
+  --radius-control: 0.25rem;
+  --radius-sheet: 0.5rem;
+  /* The screens written against the previous system still ask for this one.
+     Pointing it at the sheet radius rather than deleting it means they adopt
+     the new geometry as they are rebuilt, instead of losing their corners the
+     moment the tokens changed underneath them. */
+  --radius-card: 0.5rem;
+}
+
+:root {
+  color-scheme: light;
+
+  /*
+    Four steps of stock, not two. A dense ledger needs enough separation to
+    keep a sunken gutter, the sheet, a raised sheet and a lifted edge legible
+    against each other without reaching for a shadow.
+
+    The hue is 92, a green leaning yellow. This is deliberately not the warm
+    cream that sits at the centre of every generated page: ledger and newsprint
+    stock is manila, closer to green than to pink, and the difference is what
+    stops this reading as a template.
+  */
+  --paper: oklch(97.4% 0.011 92);
+  --paper-raised: oklch(99.2% 0.006 92);
+  --paper-sunken: oklch(95% 0.014 92);
+  --paper-edge: oklch(93.2% 0.016 92);
+
+  /*
+    Iron gall ink: not black, a blue black that browns as it oxidises.
+
+    The three steps are set by measured contrast against --paper, not by
+    eye. The first draft put faint at 66% lightness, which measured 2.89:1
+    and failed WCAG AA everywhere it was used, which was every secondary
+    label, every category note and every currency symbol on the page: 52
+    failing nodes on the register alone. Muted moved down with it to keep
+    three levels that are still visibly distinct from each other.
+
+      ink        25%   16.0:1
+      ink-muted  44%    7.2:1
+      ink-faint  54%    4.7:1   the AA floor for body text is 4.5:1
+  */
+  --ink: oklch(25% 0.03 264);
+  --ink-muted: oklch(44% 0.024 264);
+  --ink-faint: oklch(54% 0.02 264);
+
+  /* The feint ruled line, and the heavier rule drawn under a total. */
+  --rule: oklch(88% 0.014 92);
+  --rule-strong: oklch(76% 0.022 92);
+
+  /* One accent. Indigo is both the iron gall of ledger ink and the nila dye
+     of batik, so it is the single colour this product has any claim on. */
+  --indigo: oklch(44% 0.132 268);
+  --indigo-hover: oklch(38% 0.14 268);
+  --indigo-soft: oklch(94% 0.03 268);
+  --indigo-on: oklch(99% 0.004 92);
+
+  /* Ledger semantics. Credit is money in, debit is money out. Both are muted
+     rather than bright: a purchase is not an error, and a salary is not a
+     success toast. */
+  --credit: oklch(45% 0.095 158);
+  --credit-soft: oklch(94% 0.032 158);
+  --debit: oklch(47% 0.15 30);
+  --debit-soft: oklch(94% 0.036 30);
+
+  /*
+    The teller's stamp, for a threshold passed or a payment overdue.
+
+    Set at 50% rather than 56% because it is read on two grounds, not one.
+    Against paper the brighter value was fine at 4.5:1, but inside a warning
+    badge it sits on --stamp-soft and measured 4.1:1, below the floor. A colour
+    used on more than one surface has to clear the worst of them: this now
+    measures 5.3:1 on the badge and 5.8:1 on paper.
+  */
+  --stamp: oklch(50% 0.14 55);
+  --stamp-soft: oklch(95% 0.045 55);
+
+  /* Shadows exist only for things that genuinely float above the page. */
+  --shadow-sheet: 0 1px 2px oklch(25% 0.03 264 / 0.06), 0 8px 24px oklch(25% 0.03 264 / 0.08);
+  --shadow-lifted: 0 12px 40px oklch(25% 0.03 264 / 0.18);
+  --shadow-card: var(--shadow-sheet);
+  --shadow-pop: var(--shadow-lifted);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* The old name for the same curve, still referenced by the screens waiting
+     to be rebuilt. */
+  --ease-out: var(--ease);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 350ms;
+
+  /* Row height is a user setting, not a house opinion. A power user wants a
+     compact table and an occasional visitor wants air, and the same person
+     wants different things on a phone and on a desk. */
+  --row-h: 2.75rem;
+  --row-pad: 0.625rem;
+}
+
+:root[data-density='compact'] {
+  --row-h: 2rem;
+  --row-pad: 0.3125rem;
+}
+
+/*
+  Dark mode is a deep indigo ground rather than a tinted near black, so the
+  page still reads as ink and stock rather than as a terminal. The first pass
+  sat at 18.5% lightness and 0.024 chroma, which on a real screen simply read
+  as black: below roughly 0.03 chroma the hue stops being perceptible at these
+  lightnesses, and the indigo the whole palette is built on disappeared. Four
+  steps again, because dark surfaces bleed into each other far more readily
+  than light ones and two steps is not enough separation to keep panels
+  apart.
+
+  Defined once under the system preference and once under an explicit choice,
+  so an explicit choice wins in both directions and a browser reporting no
+  preference still has a complete palette from the block above.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --paper: oklch(21.5% 0.033 265);
+    --paper-raised: oklch(25.5% 0.036 265);
+    --paper-sunken: oklch(17.5% 0.03 265);
+    --paper-edge: oklch(29.5% 0.04 265);
+
+    --ink: oklch(94% 0.008 92);
+    --ink-muted: oklch(71% 0.014 265);
+    /* 4.8:1 against the dark ground. Was 55%, which measured 3.6:1. */
+    --ink-faint: oklch(62% 0.016 265);
+
+    --rule: oklch(33% 0.03 265);
+    --rule-strong: oklch(45% 0.038 265);
+
+    --indigo: oklch(74% 0.115 268);
+    --indigo-hover: oklch(81% 0.1 268);
+    --indigo-soft: oklch(32% 0.062 268);
+    --indigo-on: oklch(19% 0.03 265);
+
+    --credit: oklch(75% 0.115 158);
+    --credit-soft: oklch(27% 0.05 158);
+    --debit: oklch(71% 0.145 30);
+    --debit-soft: oklch(28% 0.055 30);
+
+    --stamp: oklch(78% 0.135 55);
+    --stamp-soft: oklch(29% 0.055 55);
+
+    --shadow-sheet: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.3);
+    --shadow-lifted: 0 12px 40px oklch(0% 0 0 / 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper: oklch(21.5% 0.033 265);
+  --paper-raised: oklch(25.5% 0.036 265);
+  --paper-sunken: oklch(17.5% 0.03 265);
+  --paper-edge: oklch(29.5% 0.04 265);
+
+  --ink: oklch(94% 0.008 92);
+  --ink-muted: oklch(71% 0.014 265);
+  --ink-faint: oklch(62% 0.016 265);
+
+  --rule: oklch(33% 0.03 265);
+  --rule-strong: oklch(45% 0.038 265);
+
+  --indigo: oklch(74% 0.115 268);
+  --indigo-hover: oklch(81% 0.1 268);
+  --indigo-soft: oklch(32% 0.062 268);
+  --indigo-on: oklch(19% 0.03 265);
+
+  --credit: oklch(75% 0.115 158);
+  --credit-soft: oklch(27% 0.05 158);
+  --debit: oklch(71% 0.145 30);
+  --debit-soft: oklch(28% 0.055 30);
+
+  --stamp: oklch(78% 0.135 55);
+  --stamp-soft: oklch(29% 0.055 55);
+
+  --shadow-sheet: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.3);
+  --shadow-lifted: 0 12px 40px oklch(0% 0 0 / 0.5);
+  --shadow-card: var(--shadow-sheet);
+  --shadow-pop: var(--shadow-lifted);
+}
+
+/*
+  Expose the tokens to Tailwind. The generic names on the right are kept
+  deliberately: the screens still to be rebuilt were written against bg,
+  surface, muted and line, so they keep rendering while they are replaced one
+  at a time rather than all breaking at once.
+*/
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunken: var(--paper-sunken);
+  --color-paper-edge: var(--paper-edge);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-indigo: var(--indigo);
+  --color-indigo-hover: var(--indigo-hover);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-indigo-on: var(--indigo-on);
+  --color-credit: var(--credit);
+  --color-credit-soft: var(--credit-soft);
+  --color-debit: var(--debit);
+  --color-debit-soft: var(--debit-soft);
+  --color-stamp: var(--stamp);
+  --color-stamp-soft: var(--stamp-soft);
+
+  /* Aliases the not-yet-rebuilt screens still reference. */
+  --color-bg: var(--paper);
+  --color-surface: var(--paper-raised);
+  --color-surface-raised: var(--paper-raised);
+  --color-surface-sunken: var(--paper-sunken);
+  --color-text: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-faint: var(--ink-faint);
+  --color-line: var(--rule);
+  --color-line-strong: var(--rule-strong);
+  --color-accent: var(--indigo);
+  --color-accent-hover: var(--indigo-hover);
+  --color-accent-soft: var(--indigo-soft);
+  --color-accent-text: var(--indigo-on);
+  --color-positive: var(--credit);
+  --color-positive-soft: var(--credit-soft);
+  --color-negative: var(--debit);
+  --color-negative-soft: var(--debit-soft);
+  --color-warning: var(--stamp);
+  --color-warning-soft: var(--stamp-soft);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Prose only. Tables and figures are exempt, since a table wants the width. */
+.measure {
+  max-width: 68ch;
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/*
+  Figures.
+
+  Everything numeric is monospaced and tabular. `.figure` is the base; the
+  three spans inside a money value let the eye land on the significant digits
+  by pushing the symbol and the minor units back a step in both size and
+  weight. Rp 1.500.000 and $12.34 then read the same way despite one of them
+  having no minor units at all.
+*/
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+  letter-spacing: -0.01em;
+}
+
+/*
+  The one balance that answers the question you opened the app to ask. Set in
+  the sans, because monospace exists to make a column line up and this figure
+  has no column: in Plex Mono the thousands separator takes a full character
+  width, which at display size punches holes straight through the number.
+  Tabular figures are kept so the digits still hold their positions while a
+  value counts up or a month is switched.
+*/
+.figure-display {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.figure-symbol {
+  font-size: 0.72em;
+  color: var(--ink-faint);
+  margin-right: 0.25em;
+  font-weight: 400;
+}
+
+.figure-minor {
+  font-size: 0.74em;
+  color: var(--ink-muted);
+}
+
+.figure-credit {
+  color: var(--credit);
+}
+.figure-debit {
+  color: var(--debit);
+}
+
+/*
+  The ledger.
+
+  A ruled row, not a card. The rule belongs to the row above it, so a group of
+  rows ends flush rather than with a dangling line, and a totals row upgrades
+  its own rule to the heavier weight the way a ledger draws under a sum.
+*/
+.ledger-row {
+  display: grid;
+  align-items: center;
+  min-height: var(--row-h);
+  padding-block: var(--row-pad);
+  border-bottom: 1px solid var(--rule);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.ledger-row:last-child {
+  border-bottom: 0;
+}
+
+.ledger-row[data-interactive]:hover,
+.ledger-row[data-interactive]:focus-within {
+  background: var(--paper-sunken);
+}
+
+.ledger-total {
+  border-top: 2px solid var(--rule-strong);
+  border-bottom: 0;
+}
+
+/*
+  A ledger on a narrow screen.
+
+  Four columns on a phone either scroll sideways or shrink the figures past
+  legibility, and neither is acceptable on the primary screen of a finance
+  app. Below the breakpoint each row folds onto two lines: what happened and
+  how much on the first, when and the running balance on the second. The
+  amount stays hard right on both lines so the column a reader scans still
+  exists.
+
+  The table markup is kept and its roles are restated in the JSX, because
+  changing `display` on a table element drops the implicit table semantics in
+  most browsers, and somebody reading this with a screen reader should still
+  be told it is a table.
+*/
+@media (width < 48rem) {
+  /* Once a row folds onto two lines there is no column for a heading to head,
+     so a heading with nothing to press leaves the layout and keeps its place
+     in the accessibility tree, which is what names the cells for anybody not
+     reading the layout. A ledger with no sortable column at all takes its
+     whole heading row out the same way.
+
+     A sortable heading is the exception and stays on screen. Clipping it left
+     the sort buttons one pixel wide, so the register announced a control
+     through aria-sort that no thumb could reach and a phone was stuck with
+     whatever order the page loaded in. What survives is one line of sort
+     controls above the rows. */
+  .ledger-narrow:not([data-sortable]) thead,
+  .ledger-narrow thead th:not([data-sortable]) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ledger-narrow thead tr {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  /* Pressed with a thumb rather than pointed at with a cursor, so the control
+     gets a target height the text alone would not give it. */
+  .ledger-narrow thead th[data-sortable] button {
+    min-height: 2.5rem;
+  }
+
+  /* The rows below become grids, so the table box no longer has table columns
+     to size, but it is still a table box and still sizes itself to its own
+     content: the intrinsic width of the widest row won over `width: 100%` and
+     the register ran 536px wide inside a 412px phone. Fixed layout makes the
+     declared width the width, which is the whole point of folding the rows. */
+  .ledger-narrow {
+    table-layout: fixed;
+  }
+
+  .ledger tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'date amount'
+      'desc balance';
+    column-gap: 1rem;
+    padding-block: var(--row-pad);
+  }
+
+  /* A grid item's automatic minimum size is its min-content width, which is
+     wide enough to hold the longest description unbroken and would push the
+     amount off the right edge again. `truncate` on the text inside cannot fire
+     until the cell itself is allowed to be narrower than its contents. */
+  .ledger td {
+    padding: 0;
+    min-width: 0;
+  }
+
+  .ledger .c-date {
+    grid-area: date;
+  }
+  .ledger .c-desc {
+    grid-area: desc;
+  }
+  .ledger .c-amount {
+    grid-area: amount;
+    text-align: right;
+  }
+  .ledger .c-balance {
+    grid-area: balance;
+    text-align: right;
+  }
+}
+
+/* The binding edge of the book, run down the left of a content column. */
+.spine {
+  border-left: 1px solid var(--rule);
+}
+
+/*
+  Motion.
+
+  One curve, three durations. Everything is expressed as a CSS transition or
+  animation so the reduced motion block at the bottom of this file covers all
+  of it without any component needing its own escape hatch.
+*/
+@keyframes print-row {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+@keyframes draw-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lift-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.995);
+  }
+}
+
+/*
+  A row being laid down by an impact printer, left to right. The stagger is a
+  custom property set per element rather than a computed inline delay, so the
+  timing curve lives in one place, and the total is capped at 320ms so a long
+  list is never still printing once a reader has scrolled past it.
+*/
+.print-in {
+  animation: print-row var(--dur-slow) var(--ease) both;
+  animation-delay: min(calc(var(--print-index, 0) * 18ms), 320ms);
+}
+
+.rule-in {
+  transform-origin: left center;
+  animation: draw-rule var(--dur-slow) var(--ease) both;
+}
+
+.fade-in {
+  animation: fade-in var(--dur) var(--ease) both;
+}
+
+.lift-in {
+  animation: lift-in var(--dur) var(--ease) both;
+}
+
+dialog[open] {
+  animation: lift-in var(--dur) var(--ease) both;
+}
+dialog[open]::backdrop {
+  animation: fade-in var(--dur) var(--ease) both;
+}
+
+/*
+  The kawung field.
+
+  Four overlapping ellipses on a square tile, the batik motif this palette's
+  indigo is named for. It exists only on shell surfaces: sign in, the lock
+  screen, an empty state. It must never sit behind a table or a balance, which
+  is the one rule that lets an app about money have a moving background at all.
+
+  The drift is a transform on an oversized pseudo element rather than an
+  animated background-position, so it composites on the GPU instead of
+  repainting the tile every frame. It also stops when the tab is hidden, since
+  a background nobody is looking at is pure battery cost.
+*/
+.kawung {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.kawung::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  /*
+    Kawung is drawn, not filled: four outlined petals meeting at a point,
+    repeated on an offset grid. Each gradient is a ring rather than a disc,
+    which is what separates the motif from a field of dots. The colour is
+    mixed into the paper rather than laid on top of it, so the field stays
+    inside the same family as the surface and never reads as a blue tile.
+  */
+  --petal: color-mix(in oklab, var(--indigo) 22%, var(--paper));
+  background-image:
+    radial-gradient(ellipse 17px 26px at 50% 0%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%),
+    radial-gradient(ellipse 17px 26px at 50% 100%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%),
+    radial-gradient(ellipse 26px 17px at 0% 50%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%),
+    radial-gradient(ellipse 26px 17px at 100% 50%, transparent 0 82%, var(--petal) 84% 92%, transparent 94%);
+  background-size: 72px 72px;
+  opacity: 0.65;
+  animation: kawung-drift 90s linear infinite;
+  will-change: transform;
+}
+
+@keyframes kawung-drift {
+  to {
+    transform: translate3d(72px, 72px, 0);
+  }
+}
+
+.kawung[data-paused]::before {
+  animation-play-state: paused;
+}
+
+/*
+  The accent walks a little with the month in view, so moving through time is
+  felt rather than announced. Twelve degrees across a whole year is under the
+  threshold where anyone would name the change, which is the point.
+*/
+[data-month-hue] {
+  --indigo: oklch(44% 0.132 calc(268 + var(--month-hue, 0)));
+}
+
+/*
+  The previous system's vocabulary, mapped onto this one.
+
+  Every screen not yet rebuilt still writes these class names. Mapping them
+  rather than deleting them means those screens adopt the ledger's behaviour
+  the moment the tokens change, instead of silently losing their motion and
+  their tabular figures and having to be chased down one at a time. Each name
+  disappears as its last caller is rewritten.
+*/
+
+/* Figures line up in a column only when the digits are tabular. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Was a fade and a six pixel rise. It is now the printed row, so a list of
+   entries anywhere in the app arrives the way the ledger's rows do. */
+.animate-rise-in {
+  animation: print-row var(--dur-slow) var(--ease) both;
+  animation-delay: min(calc(var(--stagger-index, 0) * 18ms), 320ms);
+}
+
+.animate-fade-in {
+  animation: fade-in var(--dur-slow) var(--ease) both;
+}
+
+.animate-scale-in {
+  animation: lift-in var(--dur) var(--ease) both;
+}
+
+/* A routed page settles by opacity alone, so navigation never shifts layout. */
+.animate-route {
+  animation: fade-in var(--dur) var(--ease) both;
+}
+
+/* A shimmering sweep for loading placeholders, in place of a flat pulse. */
+.animate-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--paper-sunken) 40%,
+    var(--paper-raised) 50%,
+    var(--paper-sunken) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/*
+  A whole record that acts as one interactive unit. It used to lift two pixels
+  and grow a shadow. In a ledger nothing floats, so it tints its ground
+  instead, which is also the cheaper effect: a background colour change does
+  not invalidate the layer the way a transform and a new shadow do.
+*/
+.card-interactive {
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.card-interactive:hover,
+.card-interactive:focus-within {
+  background: var(--paper-sunken);
+  border-color: var(--rule-strong);
+}
+
+/*
+  A progress or budget bar's fill. The track around it never changes size, so
+  animating this element's width cannot shift anything outside it, which is
+  the one exception the system makes to never animating width.
+*/
+.bar-fill {
+  transition: width var(--dur-slow) var(--ease), background-color var(--dur) var(--ease);
+}
+
+/*
+  Chart entrance.
+
+  Both are CSS animations rather than a JavaScript interpolation, which is the
+  whole reason the charts stopped using a library: the reduced motion block
+  below reaches a CSS animation and cannot reach a timer. A bar grows from its
+  own baseline, and a line draws itself along its length using pathLength="1"
+  so the dash maths needs no measurement of the real path.
+*/
+@keyframes grow-bar {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+.chart-bar {
+  transform-box: fill-box;
+  animation: grow-bar var(--dur-slow) var(--ease) both;
+  animation-delay: min(calc(var(--print-index, 0) * 18ms), 320ms);
+}
+
+/* Income sits above the zero line and expense below it, so each grows away
+   from the axis rather than both growing downward. */
+.chart-bar-up {
+  transform-origin: bottom;
+}
+.chart-bar-down {
+  transform-origin: top;
+}
+
+.chart-line {
+  stroke-dasharray: 1;
+  animation: draw-line 900ms var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

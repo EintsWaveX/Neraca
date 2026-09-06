@@ -1,15 +1,20 @@
-# FinancialAM
+# Neraca
 
 **A personal finance manager, in two builds: a browser application and the C
 console program it grew out of.**
 
 | Build | Where | What it is |
 |---|---|---|
-| **Web** | [eintswavex.github.io/FinancialAM](https://eintswavex.github.io/FinancialAM/) | React and TypeScript, runs entirely in the browser, no server |
-| **Console** | `cli/` | The original, 8,281 lines of C using only the standard library plus Win32 |
+| **Neraca** | [neraca-ledger.vercel.app](https://neraca-ledger.vercel.app/) | React and TypeScript, runs entirely in the browser, no server |
+| **FinancialAM** | `cli/` | The original, 8,101 lines of C using only the standard library plus Win32, with a POSIX variant of 8,119 beside it |
 
 Both are maintained. The console version is the lightweight build, not an
 archive, and a rule corrected in one gets corrected in the other.
+
+*Neraca* is Indonesian for a balance sheet, and also for the beam of a pair of
+scales. The web build took the name when it stopped being a port of the console
+program and became its own thing. FinancialAM is what the C build is still
+called, because that is what it is.
 
 ---
 
@@ -61,32 +66,55 @@ made the same promise less honestly.
 
 ### Running it
 
+One install at the root covers every workspace.
+
 ```bash
-cd web
 npm install
 npm run dev
 ```
 
+### Verification
+
 ```bash
-npx tsc -p tsconfig.app.json --noEmit   # strict, with noUncheckedIndexedAccess
-npx vitest run                           # the domain rules and the storage layer
-npm run build
+npm run verify        # typecheck, unit tests, build, bundle budget
+npm run verify:full   # the above, then the end to end suite
+npm run lint          # Oxlint, not a release gate
 ```
 
-The deploy workflow runs all three, so a failing test cannot reach the live
-site.
+`npm run verify` is what the deployment runs, so a failing typecheck or test
+fails the deploy rather than reaching the live site. It covers 201 unit tests
+over the domain rules and the storage layer.
+
+`npm run e2e` adds 42 Playwright tests across a desktop viewport and a Pixel 7,
+run against `vite preview` rather than the dev server: the dev server injects
+its HMR client and its styles inline, which the production Content Security
+Policy correctly forbids, so a suite pointed at dev would pass while the real
+deployment was broken. They cover the journeys, the security headers, and
+accessibility through axe.
 
 ### How it is put together
 
+An npm workspace. The domain rules are a package rather than a folder, so the
+dependency only points one way and nothing in them can reach for React or for
+storage by accident.
+
 ```
-web/src/domain/    pure rules: money, currencies, categories, rates, balances,
-                   budgets, recurrence, CSV, reports. No React, no storage,
-                   which is what makes them directly testable.
-web/src/data/      the Repository contract and its IndexedDB implementation.
-                   Nothing above this layer knows where data lives, so a server
-                   backed version would be a drop in replacement.
-web/src/ui/        the component library and design tokens.
-web/src/features/  one folder per screen.
+packages/domain/    pure rules: money, currencies, categories, rates, balances,
+                    budgets, recurrence, CSV, reports. No React, no storage,
+                    which is what makes them directly testable.
+packages/config/    the shared TypeScript and Oxlint configuration.
+apps/web/src/data/      the Repository contract, its IndexedDB implementation,
+                        and the seeded demo profile. Nothing above this layer
+                        knows where data lives, so a server backed version
+                        would be a drop in replacement.
+apps/web/src/design/    the Passbook design system: the ledger table, the
+                        figures, the page primitives, and a specimen page.
+apps/web/src/ui/        the component library. Tokens live in index.css and are
+                        never hardcoded.
+apps/web/src/features/  one folder per screen.
+apps/web/src/i18n/      English and Indonesian, kept in identical shape by a test.
+apps/web/src/app/       providers, routing shell, profile gate.
+e2e/                    the Playwright suite, run from the root.
 ```
 
 ---
@@ -122,11 +150,12 @@ anyone reading this can see the division rather than take my word for it.
 
 What that looked like in practice: I set the architecture, the storage
 strategy, the stack and the honesty rules, then reviewed the output and
-corrected it. Four defects that survived into review and were caught by
-running the thing rather than reading it are written up in `CLAUDE.md` and each
-has a test pinning it, including a demo dataset that generated income into one
-set of wallets and spending out of another, leaving the cash wallet nine
-million rupiah in the red on the first screen a visitor would see.
+corrected it. The defects that survived into review and were caught by running
+the thing rather than reading it are written up in `CLAUDE.md` and each has a
+test pinning it, including a demo dataset that generated income into one set of
+wallets and spending out of another, leaving the cash wallet nine million
+rupiah in the red on the first screen a visitor would see, and a register that
+could not be sorted on a phone while telling a screen reader that it could.
 
 ---
 

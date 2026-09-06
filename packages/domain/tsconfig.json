@@ -1,0 +1,9 @@
+{
+  "extends": "@neraca/config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": [],
+    "noEmit": true
+  },
+  "include": ["src"]
+}

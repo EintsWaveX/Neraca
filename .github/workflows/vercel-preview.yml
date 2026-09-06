@@ -1,0 +1,118 @@
+name: Vercel PR Preview
+
+# Preview deploys for pull requests. Vercel's own Git integration is switched
+# off in vercel.json, so this workflow is the only thing that deploys a
+# preview, which is what lets the verification gates below actually block one.
+
+# DORMANT ON PURPOSE. GitHub Actions is locked account wide by a billing issue,
+# so this workflow cannot run: the last attempt failed in three seconds with
+# "The job was not started because your account is locked due to a billing
+# issue". Rather than leave the app with no way to deploy at all, Vercel's own
+# Git integration was switched back on in vercel.json and the same gates moved
+# into its buildCommand, where a failing typecheck, test or bundle budget fails
+# the deployment without spending an Actions minute.
+#
+# This file is kept because it is the better shape once billing clears: the
+# gates show up as pull request checks, and deploys go through one reviewable
+# path. To restore it, clear the lock, set "deploymentEnabled" back to false in
+# vercel.json, drop the buildCommand there, and put the real trigger below
+# back. Leaving both live would deploy every change twice.
+#
+# Kept current with the tree even though it cannot run. The paths below were
+# written when the web build lived in web/ and the workspaces did not exist,
+# which would have failed on a directory that has not been there since the
+# restructure: a confusing error to meet on the day billing clears.
+
+on:
+  # The real trigger, restored when the billing lock clears:
+  #   pull_request:
+  #     types: [opened, synchronize, reopened]
+  #     paths:
+  #       - 'apps/**'
+  #       - 'packages/**'
+  #       - 'e2e/**'
+  #       - 'package.json'
+  #       - 'package-lock.json'
+  #       - 'vercel.json'
+  #       - '.github/workflows/vercel-preview.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  Deploy-Preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # No working-directory. This is an npm workspace and every script lives at
+      # the root, where it reaches across apps/ and packages/ at once.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The same gates named in CLAUDE.md, ahead of the deploy rather than after
+      # it, so a broken typecheck or a failing test never reaches a preview URL
+      # someone might be shown.
+      - name: Verify
+        run: npm run verify
+
+      # Only the one browser the suite actually uses. Both Playwright projects
+      # are Chromium, one at a desktop viewport and one emulating a Pixel 7.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # Runs after Verify because it serves the dist/ that Verify just built.
+      - name: End to end
+        run: npm run e2e
+
+      # Pinned to a major. `@latest` would let a CLI release change the
+      # behaviour of a deploy with no commit to point at.
+      - name: Install Vercel CLI
+        run: npm install --global vercel@59
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy Project Artifacts to Vercel
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "preview_url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment Preview URL on PR
+        uses: actions/github-script@v7
+        if: steps.deploy.outputs.preview_url != ''
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.preview_url }}';
+            const body = `### Vercel preview deployed\n\n**Preview URL:** [${url}](${url})\n\nBuilt from commit \`${{ github.event.pull_request.head.sha }}\`.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
